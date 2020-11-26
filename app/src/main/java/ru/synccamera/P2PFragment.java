@@ -7,6 +7,8 @@ import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -33,6 +35,9 @@ public class P2PFragment extends Fragment {
     protected PeerBroadcastReceiver receiver;
     protected int id;
     protected String role = "";
+
+    protected Server server;
+    protected Client client;
 
     private WifiP2pManager.PeerListListener peerListListener = new WifiP2pManager.PeerListListener() {
         @Override
@@ -63,11 +68,25 @@ public class P2PFragment extends Fragment {
             final InetAddress groupOwnerAddress = wifiP2pInfo.groupOwnerAddress;
             if (wifiP2pInfo.groupFormed && wifiP2pInfo.isGroupOwner) {
                 Log.i("SyncCamera", "Connected as a host");
+                server = new Server();
+                server.start();
             } else {
                 Log.i("SyncCamera", "Connected to " + groupOwnerAddress + " as a client");
+                client = new Client(groupOwnerAddress, new Handler.Callback() {
+                    @Override
+                    public boolean handleMessage(@NonNull Message message) {
+                        reactOnMessage(message);
+                        return true;
+                    }
+                });
+                client.start();
             }
         }
     };
+
+    protected void reactOnMessage(Message message) {
+
+    }
 
     public P2PFragment(int layoutId) {
         id = layoutId;
@@ -80,8 +99,8 @@ public class P2PFragment extends Fragment {
     protected void startDiscovery(WifiP2pManager.ActionListener listener) {
         try {
             manager.discoverPeers(channel, listener);
-        } catch (SecurityException ignored) {
-
+        } catch (SecurityException e) {
+            e.printStackTrace();
         }
     }
 

@@ -7,4 +7,5 @@
     <string name="device_invite">запрос</string>
     <string name="device_error">ошибка</string>
     <string name="device_available">доступен</string>
+    <string name="start_rec">Начать запись</string>
 </resources>

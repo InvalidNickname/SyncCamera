@@ -19,8 +19,8 @@ import java.util.List;
 
 public class ControllerFragment extends P2PFragment implements View.OnClickListener {
 
-    RecyclerView list;
-    ListRVAdapter adapter;
+    private RecyclerView list;
+    private ListRVAdapter adapter;
 
     public ControllerFragment() {
         super(R.layout.fragment_controller);
@@ -32,6 +32,7 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_controller, container, false);
         rootView.findViewById(R.id.peer_search).setOnClickListener(this);
+        rootView.findViewById(R.id.send_command).setOnClickListener(this);
         list = rootView.findViewById(R.id.peer_list);
         list.setLayoutManager(new LinearLayoutManager(getContext()));
         adapter = new ListRVAdapter(new ArrayList<PeerListItem>(), this);
@@ -62,7 +63,8 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
                     updateList();
                 }
             });
-        } catch (SecurityException ignored) {
+        } catch (SecurityException e) {
+            e.printStackTrace();
         }
     }
 
@@ -113,6 +115,8 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
                     }
                 });
                 break;
+            case R.id.send_command:
+                server.write("START".getBytes());
         }
     }
 }

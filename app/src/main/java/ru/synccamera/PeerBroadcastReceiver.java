@@ -12,11 +12,11 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class PeerBroadcastReceiver extends BroadcastReceiver {
 
-    AppCompatActivity activity;
-    WifiP2pManager manager;
-    WifiP2pManager.PeerListListener listener;
-    WifiP2pManager.Channel channel;
-    WifiP2pManager.ConnectionInfoListener connectionInfoListener;
+    private AppCompatActivity activity;
+    private WifiP2pManager manager;
+    private WifiP2pManager.PeerListListener listener;
+    private WifiP2pManager.Channel channel;
+    private WifiP2pManager.ConnectionInfoListener connectionInfoListener;
 
     public PeerBroadcastReceiver(AppCompatActivity activity, WifiP2pManager.PeerListListener listener, WifiP2pManager manager, WifiP2pManager.Channel channel, WifiP2pManager.ConnectionInfoListener connectionInfoListener) {
         this.activity = activity;
@@ -32,16 +32,16 @@ public class PeerBroadcastReceiver extends BroadcastReceiver {
         if (WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION.equals(action)) {
             int state = intent.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE, -1);
             if (state == WifiP2pManager.WIFI_P2P_STATE_ENABLED) {
-                Log.d("SyncCamera","Wi-Fi on");
+                Log.d("SyncCamera", "Wi-Fi on");
             } else {
-                Log.d("SyncCamera","Wi-Fi off");
+                Log.d("SyncCamera", "Wi-Fi off");
             }
         } else if (WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION.equals(action)) {
             if (manager != null) {
                 try {
                     manager.requestPeers(channel, listener);
-                } catch (SecurityException ignored) {
-
+                } catch (SecurityException e) {
+                    e.printStackTrace();
                 }
             }
         } else if (WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION.equals(action)) {
