@@ -1,0 +1,118 @@
+package ru.synccamera;
+
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.net.wifi.p2p.WifiP2pConfig;
+import android.net.wifi.p2p.WifiP2pDevice;
+import android.net.wifi.p2p.WifiP2pManager;
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class ControllerFragment extends P2PFragment implements View.OnClickListener {
+
+    RecyclerView list;
+    ListRVAdapter adapter;
+    List<PeerListItem> listItems;
+
+    public ControllerFragment() {
+        super(R.layout.fragment_controller);
+    }
+
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        View rootView = inflater.inflate(R.layout.fragment_controller, container, false);
+        rootView.findViewById(R.id.peer_search).setOnClickListener(this);
+        list = rootView.findViewById(R.id.peer_list);
+        list.setLayoutManager(new LinearLayoutManager(getContext()));
+        adapter = new ListRVAdapter(listItems, this);
+        list.setAdapter(adapter);
+        return rootView;
+    }
+
+    @Override
+    protected void reactOnPeers() {
+        updateList();
+    }
+
+    public void connectToPeer(String address) {
+        try {
+            WifiP2pConfig config = new WifiP2pConfig();
+            config.deviceAddress = address;
+            manager.connect(channel, config, new WifiP2pManager.ActionListener() {
+
+                @Override
+                public void onSuccess() {
+                    updateList();
+                }
+
+                @Override
+                public void onFailure(int reason) {
+                    updateList();
+                }
+            });
+        } catch (SecurityException ignored) {
+        }
+    }
+
+    private void updateList() {
+        listItems = new ArrayList<>();
+        for (WifiP2pDevice device : peers) {
+            listItems.add(new PeerListItem(device.deviceName, statusToString(device.status), device.deviceAddress));
+        }
+        adapter.notifyDataSetChanged();
+    }
+
+    private String statusToString(int status) {
+        switch (status) {
+            case 0:
+                return getString(R.string.device_connected);
+            case 1:
+                return getString(R.string.device_invite);
+            case 2:
+                return getString(R.string.device_error);
+            case 3:
+                return getString(R.string.device_available);
+        }
+        return "";
+    }
+
+    @Override
+    public void receive(WifiP2pDevice parcelableExtra) {
+
+    }
+
+    @Override
+    public void onClick(View view) {
+        switch (view.getId()) {
+            case R.id.peer_search:
+                if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    return;
+                }
+                manager.discoverPeers(channel, new WifiP2pManager.ActionListener() {
+
+                    @Override
+                    public void onSuccess() {
+                        updateList();
+                    }
+
+                    @Override
+                    public void onFailure(int reasonCode) {
+                        updateList();
+                    }
+                });
+                break;
+        }
+    }
+}

@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">SyncCamera</string>
+    <string name="set_controller">Это управляющий телефон</string>
+    <string name="set_camera">Это камера</string>
+    <string name="peer_search">Поиск устройств в сети</string>
+    <string name="device_connected">подключен</string>
+    <string name="device_invite">запрос</string>
+    <string name="device_error">ошибка</string>
+    <string name="device_available">доступен</string>
+</resources>
