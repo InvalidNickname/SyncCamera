@@ -1,6 +1,7 @@
 package ru.synccamera;
 
 import android.os.Handler;
+import android.util.Log;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -25,6 +26,7 @@ public class Client extends Thread {
     public void run() {
         try {
             socket.connect(new InetSocketAddress(hostAddress, port), 5000);
+            Log.d("SyncCamera", "Client connected to " + hostAddress + ":" + port);
             senderReceiver = new SenderReceiver(socket);
             senderReceiver.setCallback(callback);
             senderReceiver.run();

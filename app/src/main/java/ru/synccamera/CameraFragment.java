@@ -16,7 +16,6 @@ public class CameraFragment extends P2PFragment {
 
     public CameraFragment() {
         super(R.layout.fragment_camera);
-        role = "CAMERA";
     }
 
     @Nullable

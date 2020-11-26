@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.Arrays;
 
 public class SenderReceiver extends Thread {
 
@@ -35,14 +36,14 @@ public class SenderReceiver extends Thread {
             try {
                 bytes = inputStream.read(buffer);
                 if (bytes > 0) {
-                    System.out.println(buffer.toString());
+                    Log.d("SyncCamera", "Got \"" + Arrays.toString(buffer) + "\"");
                     if (handler != null) handler.obtainMessage(1, bytes, -1, buffer).sendToTarget();
                 }
             } catch (IOException e) {
                 //e.printStackTrace();
             }
         }
-        Log.d("SyncCamera","End of receiving");
+        Log.d("SyncCamera", "End of receiving");
     }
 
     public void write(byte[] bytes) {
@@ -65,11 +66,13 @@ public class SenderReceiver extends Thread {
 
         @Override
         protected Object doInBackground(Object[] objects) {
+            Log.d("SyncCamera", "Trying to send \"" + Arrays.toString(bytes) + "\"");
             try {
                 stream.write(bytes);
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            Log.d("SyncCamera", "Sent \"" + Arrays.toString(bytes) + "\"");
             return null;
         }
     }

@@ -24,7 +24,6 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
 
     public ControllerFragment() {
         super(R.layout.fragment_controller);
-        role = "CONTROLLER";
     }
 
     @Nullable
@@ -49,6 +48,7 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
         try {
             WifiP2pConfig config = new WifiP2pConfig();
             config.deviceAddress = address;
+            config.groupOwnerIntent = 15;
             manager.connect(channel, config, new WifiP2pManager.ActionListener() {
 
                 @Override

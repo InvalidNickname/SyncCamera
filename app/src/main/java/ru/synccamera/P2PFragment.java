@@ -34,7 +34,6 @@ public class P2PFragment extends Fragment {
     protected WifiP2pManager manager;
     protected PeerBroadcastReceiver receiver;
     protected int id;
-    protected String role = "";
 
     protected Server server;
     protected Client client;
@@ -67,9 +66,11 @@ public class P2PFragment extends Fragment {
         public void onConnectionInfoAvailable(WifiP2pInfo wifiP2pInfo) {
             final InetAddress groupOwnerAddress = wifiP2pInfo.groupOwnerAddress;
             if (wifiP2pInfo.groupFormed && wifiP2pInfo.isGroupOwner) {
-                Log.i("SyncCamera", "Connected as a host");
-                server = new Server();
-                server.start();
+                Log.i("SyncCamera", "Connected as a host " + groupOwnerAddress);
+                if (server == null) {
+                    server = new Server();
+                }
+                server.newConnection();
             } else {
                 Log.i("SyncCamera", "Connected to " + groupOwnerAddress + " as a client");
                 client = new Client(groupOwnerAddress, new Handler.Callback() {
@@ -84,12 +85,12 @@ public class P2PFragment extends Fragment {
         }
     };
 
-    protected void reactOnMessage(Message message) {
-
-    }
-
     public P2PFragment(int layoutId) {
         id = layoutId;
+    }
+
+    protected void reactOnMessage(Message message) {
+
     }
 
     protected void reactOnPeers() {
