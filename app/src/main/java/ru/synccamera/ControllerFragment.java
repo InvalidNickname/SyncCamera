@@ -23,7 +23,6 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
 
     RecyclerView list;
     ListRVAdapter adapter;
-    List<PeerListItem> listItems;
 
     public ControllerFragment() {
         super(R.layout.fragment_controller);
@@ -36,7 +35,7 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
         rootView.findViewById(R.id.peer_search).setOnClickListener(this);
         list = rootView.findViewById(R.id.peer_list);
         list.setLayoutManager(new LinearLayoutManager(getContext()));
-        adapter = new ListRVAdapter(listItems, this);
+        adapter = new ListRVAdapter(new ArrayList<PeerListItem>(), this);
         list.setAdapter(adapter);
         return rootView;
     }
@@ -67,10 +66,11 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
     }
 
     private void updateList() {
-        listItems = new ArrayList<>();
+        List<PeerListItem> listItems = new ArrayList<>();
         for (WifiP2pDevice device : peers) {
             listItems.add(new PeerListItem(device.deviceName, statusToString(device.status), device.deviceAddress));
         }
+        adapter.setList(listItems);
         adapter.notifyDataSetChanged();
     }
 
