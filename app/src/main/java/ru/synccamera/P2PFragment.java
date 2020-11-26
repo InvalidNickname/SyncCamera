@@ -4,8 +4,10 @@ import android.content.Context;
 import android.content.IntentFilter;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
+import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,6 +17,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -29,20 +32,39 @@ public class P2PFragment extends Fragment {
     protected WifiP2pManager manager;
     protected PeerBroadcastReceiver receiver;
     protected int id;
+    protected String role = "";
 
     private WifiP2pManager.PeerListListener peerListListener = new WifiP2pManager.PeerListListener() {
         @Override
         public void onPeersAvailable(WifiP2pDeviceList peerList) {
             Collection<WifiP2pDevice> refreshedPeers = peerList.getDeviceList();
             if (!refreshedPeers.equals(peers)) {
+                Log.d("SyncCamera", "New peer list available:");
+                for (WifiP2pDevice peer : refreshedPeers) {
+                    if (!peers.contains(peer)) {
+                        Log.d("SyncCamera", "\t+ " + peer.deviceName + " | " + peer.deviceAddress);
+                    }
+                }
+                for (WifiP2pDevice peer : peers) {
+                    if (!refreshedPeers.contains(peer)) {
+                        Log.d("SyncCamera", "\t- " + peer.deviceName + " | " + peer.deviceAddress);
+                    }
+                }
                 peers.clear();
                 peers.addAll(refreshedPeers);
+                reactOnPeers();
             }
+        }
+    };
 
-            reactOnPeers();
-
-            if (peers.size() == 0) {
-                return;
+    private WifiP2pManager.ConnectionInfoListener connectionInfoListener = new WifiP2pManager.ConnectionInfoListener() {
+        @Override
+        public void onConnectionInfoAvailable(WifiP2pInfo wifiP2pInfo) {
+            final InetAddress groupOwnerAddress = wifiP2pInfo.groupOwnerAddress;
+            if (wifiP2pInfo.groupFormed && wifiP2pInfo.isGroupOwner) {
+                Log.i("SyncCamera", "Connected as a host");
+            } else {
+                Log.i("SyncCamera", "Connected to " + groupOwnerAddress + " as a client");
             }
         }
     };
@@ -53,6 +75,14 @@ public class P2PFragment extends Fragment {
 
     protected void reactOnPeers() {
 
+    }
+
+    protected void startDiscovery(WifiP2pManager.ActionListener listener) {
+        try {
+            manager.discoverPeers(channel, listener);
+        } catch (SecurityException ignored) {
+
+        }
     }
 
     @Nullable
@@ -80,7 +110,7 @@ public class P2PFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        receiver = new PeerBroadcastReceiver((AppCompatActivity) getContext(), peerListListener, manager, channel);
+        receiver = new PeerBroadcastReceiver((AppCompatActivity) getContext(), peerListListener, manager, channel, connectionInfoListener);
         getContext().registerReceiver(receiver, intentFilter);
     }
 

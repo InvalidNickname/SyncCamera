@@ -1,18 +1,16 @@
 package ru.synccamera;
 
-import android.Manifest;
-import android.content.pm.PackageManager;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -26,6 +24,7 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
 
     public ControllerFragment() {
         super(R.layout.fragment_controller);
+        role = "CONTROLLER";
     }
 
     @Nullable
@@ -45,7 +44,7 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
         updateList();
     }
 
-    public void connectToPeer(String address) {
+    public void connectToPeer(final String address) {
         try {
             WifiP2pConfig config = new WifiP2pConfig();
             config.deviceAddress = address;
@@ -53,11 +52,13 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
 
                 @Override
                 public void onSuccess() {
+                    Log.d("SyncCamera", "Connected to " + address);
                     updateList();
                 }
 
                 @Override
                 public void onFailure(int reason) {
+                    Log.d("SyncCamera", "Failed to connect to " + address);
                     updateList();
                 }
             });
@@ -97,18 +98,17 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.peer_search:
-                if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                    return;
-                }
-                manager.discoverPeers(channel, new WifiP2pManager.ActionListener() {
+                startDiscovery(new WifiP2pManager.ActionListener() {
 
                     @Override
                     public void onSuccess() {
+                        Log.d("SyncCamera", "Started discovery");
                         updateList();
                     }
 
                     @Override
                     public void onFailure(int reasonCode) {
+                        Log.d("SyncCamera", "Failed to start discovery");
                         updateList();
                     }
                 });
