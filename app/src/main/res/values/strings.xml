@@ -7,7 +7,9 @@
     <string name="device_invite">запрос</string>
     <string name="device_error">ОШИБКА</string>
     <string name="device_available">+</string>
-    <string name="start_rec">Начать запись</string>
+    <string name="start_recording">Начать запись</string>
     <string name="begin_search">Начать поиск</string>
     <string name="stop_search">Остановить поиск</string>
+    <string name="device_connection_lost_while_recording">ОШИБКА</string>
+    <string name="stop_recording">Остановить запись</string>
 </resources>

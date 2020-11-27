@@ -5,6 +5,7 @@ import android.content.IntentFilter;
 import android.net.wifi.WifiManager;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
+import android.net.wifi.p2p.WifiP2pGroup;
 import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
@@ -143,6 +144,29 @@ public class P2PFragment extends Fragment {
     @Override
     public void onDetach() {
         super.onDetach();
+        try {
+            manager.requestGroupInfo(channel, new WifiP2pManager.GroupInfoListener() {
+                @Override
+                public void onGroupInfoAvailable(WifiP2pGroup group) {
+                    if (group != null && manager != null && channel != null) {
+                        manager.removeGroup(channel, new WifiP2pManager.ActionListener() {
+
+                            @Override
+                            public void onSuccess() {
+                                Log.d("SyncCamera", "Cancelling connections");
+                            }
+
+                            @Override
+                            public void onFailure(int reason) {
+                                Log.d("SyncCamera", "Failed to cancel connections");
+                            }
+                        });
+                    }
+                }
+            });
+        } catch (SecurityException e) {
+            Log.d("SyncCamera","Failed to cancel connections");
+        }
         if (wifiLock.isHeld()) {
             wifiLock.release();
         }

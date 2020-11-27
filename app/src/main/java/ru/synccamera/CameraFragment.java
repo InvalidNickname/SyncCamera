@@ -1,34 +1,100 @@
 package ru.synccamera;
 
+import android.content.Context;
+import android.hardware.Camera;
+import android.media.CamcorderProfile;
+import android.media.MediaRecorder;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Message;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.SurfaceHolder;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
+import java.io.File;
+import java.io.IOException;
+
 public class CameraFragment extends P2PFragment {
+
+    private Camera camera;
+    private CameraPreview cameraPreview;
+    private MediaRecorder mediaRecorder;
+    private boolean preparedMediaRecorder;
+    private ImageView recordingMark;
 
     public CameraFragment() {
         super(R.layout.fragment_camera);
+    }
+
+    private static Camera getCameraInstance() {
+        Camera c = null;
+        try {
+            Log.d("SyncCamera", "Opening camera");
+            c = Camera.open();
+        } catch (Exception e) {
+            Log.d("SyncCamera", "Failed to open camera");
+        }
+        return c;
+    }
+
+    private static File getOutputMediaFile() {
+        File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "SyncCamera");
+        if (!mediaStorageDir.exists()) {
+            if (!mediaStorageDir.mkdirs()) {
+                Log.d("SyncCamera", "Failed to create save directory");
+                return null;
+            }
+        }
+        String timeStamp = String.valueOf(System.currentTimeMillis());
+        File mediaFile;
+        mediaFile = new File(mediaStorageDir.getPath() + File.separator + timeStamp + ".mp4");
+
+        return mediaFile;
     }
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_camera, container, false);
+
+        recordingMark = rootView.findViewById(R.id.recording_mark);
+
         Toolbar toolbar = rootView.findViewById(R.id.toolbar);
         ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
         setHasOptionsMenu(true);
+
+        cameraPreview = new CameraPreview(getContext(), camera, new SurfaceHolder.Callback() {
+            @Override
+            public void surfaceCreated(@NonNull SurfaceHolder surfaceHolder) {
+                Log.d("SyncCamera", "Surface created, preparing MediaRecorder");
+                preparedMediaRecorder = prepareMediaRecorder();
+            }
+
+            @Override
+            public void surfaceChanged(@NonNull SurfaceHolder surfaceHolder, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void surfaceDestroyed(@NonNull SurfaceHolder surfaceHolder) {
+
+            }
+        });
+        FrameLayout previewLayout = rootView.findViewById(R.id.camera_preview);
+        previewLayout.addView(cameraPreview);
         return rootView;
     }
 
@@ -83,6 +149,80 @@ public class CameraFragment extends P2PFragment {
         byte[] buffer = (byte[]) message.obj;
         String temp = new String(buffer, 0, message.arg1);
         Log.d("SyncCamera", "Got message " + temp + " at " + System.currentTimeMillis());
+        switch (temp) {
+            case "START":
+                if (preparedMediaRecorder) {
+                    camera.unlock();
+                    mediaRecorder.start();
+                    Log.d("SyncCamera", "Recording video, started at " + System.currentTimeMillis());
+                    recordingMark.setVisibility(View.VISIBLE);
+                } else {
+                    Log.d("SyncCamera", "MediaRecorder isn't ready, can't start");
+                }
+                break;
+            case "STOP":
+                mediaRecorder.stop();
+                camera.lock();
+                Log.d("SyncCamera", "Stopped recording video, resetting MediaRecorder");
+                preparedMediaRecorder = prepareMediaRecorder();
+                recordingMark.setVisibility(View.INVISIBLE);
+                break;
+        }
+    }
+
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        camera = getCameraInstance();
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        if (camera != null) {
+            camera.release();
+            camera = null;
+            Log.d("SyncCamera", "Camera released");
+        }
+        releaseMediaRecorder();
+    }
+
+    private boolean prepareMediaRecorder() {
+        mediaRecorder = new MediaRecorder();
+        mediaRecorder.setCamera(camera);
+        mediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
+        mediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
+        mediaRecorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH));
+        String filePath = getOutputMediaFile().toString();
+        Log.d("SyncCamera", "New file will be saved at: " + filePath);
+        mediaRecorder.setOutputFile(filePath);
+        mediaRecorder.setPreviewDisplay(cameraPreview.getHolder().getSurface());
+        Camera.Size maxSize = camera.getParameters().getSupportedPreviewSizes().get(0);
+        Log.d("SyncCamera", "Max video size is " + maxSize.height + "*" + maxSize.width);
+        //mediaRecorder.setVideoSize(maxSize.width, maxSize.height);
+        try {
+            mediaRecorder.prepare();
+        } catch (IllegalStateException e) {
+            Log.d("SyncCamera", "IllegalStateException preparing MediaRecorder");
+            releaseMediaRecorder();
+            return false;
+        } catch (IOException e) {
+            Log.d("SyncCamera", "IOException preparing MediaRecorder");
+            e.printStackTrace();
+            releaseMediaRecorder();
+            return false;
+        }
+        Log.d("SyncCamera", "MediaRecorder prepared");
+        return true;
+    }
+
+    private void releaseMediaRecorder() {
+        if (mediaRecorder != null) {
+            mediaRecorder.reset();
+            mediaRecorder.release();
+            mediaRecorder = null;
+            Log.d("SyncCamera", "MediaRecorder released");
+        }
     }
 
 }

@@ -11,6 +11,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -24,8 +25,10 @@ import java.util.List;
 
 public class ControllerFragment extends P2PFragment implements View.OnClickListener {
 
-    private RecyclerView list;
     private ListRVAdapter adapter;
+    private boolean isRecording = false;
+    private List<PeerListItem> currentActive = new ArrayList<>();
+    private Button recordButton;
 
     public ControllerFragment() {
         super(R.layout.fragment_controller);
@@ -35,14 +38,19 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_controller, container, false);
-        rootView.findViewById(R.id.send_command).setOnClickListener(this);
+
+        recordButton = rootView.findViewById(R.id.send_command);
+        recordButton.setOnClickListener(this);
+
         Toolbar toolbar = rootView.findViewById(R.id.toolbar);
         ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
         setHasOptionsMenu(true);
-        list = rootView.findViewById(R.id.peer_list);
+
+        RecyclerView list = rootView.findViewById(R.id.peer_list);
         list.setLayoutManager(new LinearLayoutManager(getContext()));
         adapter = new ListRVAdapter(new ArrayList<PeerListItem>(), this);
         list.setAdapter(adapter);
+
         return rootView;
     }
 
@@ -134,6 +142,14 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
         for (WifiP2pDevice device : peers) {
             listItems.add(new PeerListItem(device.deviceName, device.status, device.deviceAddress));
         }
+        if (isRecording) {
+            for (int i = 0; i < currentActive.size(); ++i) {
+                if (!listItems.contains(currentActive.get(i))) {
+                    currentActive.get(i).setStatus(4);
+                }
+            }
+            listItems = currentActive;
+        }
         adapter.setList(listItems);
         adapter.notifyDataSetChanged();
     }
@@ -148,7 +164,21 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
         switch (view.getId()) {
             case R.id.send_command:
                 if (server != null) {
-                    server.write("START".getBytes());
+                    if (isRecording) {
+                        server.write("STOP".getBytes());
+                        isRecording = false;
+                        recordButton.setText(R.string.start_recording);
+                    } else {
+                        server.write("START".getBytes());
+                        isRecording = true;
+                        currentActive = new ArrayList<>();
+                        for (WifiP2pDevice device : peers) {
+                            if (device.status == 0) {
+                                currentActive.add(new PeerListItem(device.deviceName, device.status, device.deviceAddress));
+                            }
+                        }
+                        recordButton.setText(R.string.stop_recording);
+                    }
                 } else {
                     Log.d("SyncCamera", "Server not started");
                 }

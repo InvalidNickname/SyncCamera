@@ -35,10 +35,16 @@ public class ListRVAdapter extends RecyclerView.Adapter<ListRVAdapter.CardViewHo
         int status = peers.get(i).getStatus();
         Context context = cardViewHolder.main.getContext();
         cardViewHolder.status.setText(statusToString(context, status));
-        if (status == 0) {
-            cardViewHolder.main.setBackgroundColor(context.getColor(R.color.green));
-        } else {
-            cardViewHolder.main.setBackground(null);
+        switch (status) {
+            case 0:
+                cardViewHolder.main.setBackgroundColor(context.getColor(R.color.green));
+                break;
+            case 4:
+                cardViewHolder.main.setBackgroundColor(context.getColor(R.color.red));
+                break;
+            default:
+                cardViewHolder.main.setBackground(null);
+                break;
         }
         cardViewHolder.mac.setText(peers.get(i).getAddress());
         cardViewHolder.main.setOnClickListener(new View.OnClickListener() {
@@ -59,6 +65,8 @@ public class ListRVAdapter extends RecyclerView.Adapter<ListRVAdapter.CardViewHo
                 return context.getString(R.string.device_error);
             case 3:
                 return context.getString(R.string.device_available);
+            case 4:
+                return context.getString(R.string.device_connection_lost_while_recording);
         }
         return "";
     }

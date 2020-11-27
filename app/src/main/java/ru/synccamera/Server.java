@@ -40,7 +40,10 @@ public class Server {
         connectionEstablisher.start();
         try {
             connectionEstablisher.join();
-            senderReceiver.add(new SenderReceiver(connectionEstablisher.getSocket()));
+            Socket socket = connectionEstablisher.getSocket();
+            if (socket != null) {
+                senderReceiver.add(new SenderReceiver(socket));
+            }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -55,6 +58,7 @@ public class Server {
         public void run() {
             try {
                 serverSocket = new ServerSocket(port);
+                serverSocket.setSoTimeout(500);
             } catch (IOException e) {
                 e.printStackTrace();
             }

@@ -20,6 +20,10 @@ public class PeerListItem {
         return status;
     }
 
+    public void setStatus(int status) {
+        this.status = status;
+    }
+
     public String getAddress() {
         return address;
     }
