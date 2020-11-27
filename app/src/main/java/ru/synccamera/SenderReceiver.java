@@ -2,6 +2,7 @@ package ru.synccamera;
 
 import android.os.AsyncTask;
 import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 
 import java.io.IOException;
@@ -36,8 +37,11 @@ public class SenderReceiver extends Thread {
             try {
                 bytes = inputStream.read(buffer);
                 if (bytes > 0) {
-                    Log.d("SyncCamera", "Got \"" + Arrays.toString(buffer) + "\"");
-                    if (handler != null) handler.obtainMessage(1, bytes, -1, buffer).sendToTarget();
+                    Log.d("SyncCamera", "Got new message, sending to handler");
+                    if (handler != null) {
+                        Message message = handler.obtainMessage(1, bytes, -1, buffer);
+                        message.sendToTarget();
+                    }
                 }
             } catch (IOException e) {
                 //e.printStackTrace();
@@ -50,8 +54,8 @@ public class SenderReceiver extends Thread {
         new AsyncWriter(bytes, outputStream).execute();
     }
 
-    public void setCallback(Handler.Callback callback) {
-        handler = new Handler(callback);
+    public void setCallback(Handler handler) {
+        this.handler = handler;
     }
 
     static class AsyncWriter extends AsyncTask {

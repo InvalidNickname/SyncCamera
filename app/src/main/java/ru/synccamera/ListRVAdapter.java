@@ -1,5 +1,6 @@
 package ru.synccamera;
 
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,13 +32,35 @@ public class ListRVAdapter extends RecyclerView.Adapter<ListRVAdapter.CardViewHo
     @Override
     public void onBindViewHolder(@NonNull final CardViewHolder cardViewHolder, final int i) {
         cardViewHolder.name.setText(peers.get(i).getName());
-        cardViewHolder.status.setText(peers.get(i).getStatus());
+        int status = peers.get(i).getStatus();
+        Context context = cardViewHolder.main.getContext();
+        cardViewHolder.status.setText(statusToString(context, status));
+        if (status == 0) {
+            cardViewHolder.main.setBackgroundColor(context.getColor(R.color.green));
+        } else {
+            cardViewHolder.main.setBackground(null);
+        }
+        cardViewHolder.mac.setText(peers.get(i).getAddress());
         cardViewHolder.main.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 fragment.connectToPeer(peers.get(i).getAddress());
             }
         });
+    }
+
+    private String statusToString(Context context, int status) {
+        switch (status) {
+            case 0:
+                return context.getString(R.string.device_connected);
+            case 1:
+                return context.getString(R.string.device_invite);
+            case 2:
+                return context.getString(R.string.device_error);
+            case 3:
+                return context.getString(R.string.device_available);
+        }
+        return "";
     }
 
     public List<PeerListItem> getList() {
@@ -58,12 +81,14 @@ public class ListRVAdapter extends RecyclerView.Adapter<ListRVAdapter.CardViewHo
         final TextView name;
         final TextView status;
         final ConstraintLayout main;
+        final TextView mac;
 
         CardViewHolder(@NonNull View itemView) {
             super(itemView);
             main = itemView.findViewById(R.id.card);
             name = itemView.findViewById(R.id.name);
             status = itemView.findViewById(R.id.status);
+            mac = itemView.findViewById(R.id.mac);
         }
     }
 }

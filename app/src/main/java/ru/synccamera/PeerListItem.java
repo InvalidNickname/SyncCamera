@@ -3,10 +3,10 @@ package ru.synccamera;
 public class PeerListItem {
 
     private String name;
-    private String status;
+    private int status;
     private String address;
 
-    PeerListItem(String name, String status, String address) {
+    PeerListItem(String name, int status, String address) {
         this.name = name;
         this.status = status;
         this.address = address;
@@ -16,7 +16,7 @@ public class PeerListItem {
         return name;
     }
 
-    public String getStatus() {
+    public int getStatus() {
         return status;
     }
 

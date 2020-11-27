@@ -6,11 +6,16 @@ import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -30,13 +35,69 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_controller, container, false);
-        rootView.findViewById(R.id.peer_search).setOnClickListener(this);
         rootView.findViewById(R.id.send_command).setOnClickListener(this);
+        Toolbar toolbar = rootView.findViewById(R.id.toolbar);
+        ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
+        setHasOptionsMenu(true);
         list = rootView.findViewById(R.id.peer_list);
         list.setLayoutManager(new LinearLayoutManager(getContext()));
         adapter = new ListRVAdapter(new ArrayList<PeerListItem>(), this);
         list.setAdapter(adapter);
         return rootView;
+    }
+
+    @Override
+    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
+        inflater.inflate(R.menu.menu_controller, menu);
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull final MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.toggle_discovery:
+                if (isDiscovering) {
+                    item.setIcon(R.drawable.ic_refresh);
+                    stopDiscovery(new WifiP2pManager.ActionListener() {
+
+                        @Override
+                        public void onSuccess() {
+                            Log.d("SyncCamera", "Stopped discovery");
+                            List<PeerListItem> items = new ArrayList<>();
+                            for (WifiP2pDevice device : peers) {
+                                if (device.status == 0) {
+                                    items.add(new PeerListItem(device.deviceName, device.status, device.deviceAddress));
+                                }
+                            }
+                            updateList(items);
+                            isDiscovering = false;
+                        }
+
+                        @Override
+                        public void onFailure(int reasonCode) {
+                            Log.d("SyncCamera", "Failed to stop discovery");
+                        }
+                    });
+                } else {
+                    item.setIcon(R.drawable.ic_stop);
+                    startDiscovery(new WifiP2pManager.ActionListener() {
+
+                        @Override
+                        public void onSuccess() {
+                            Log.d("SyncCamera", "Started discovery");
+                            updateList();
+                            isDiscovering = true;
+                        }
+
+                        @Override
+                        public void onFailure(int reasonCode) {
+                            Log.d("SyncCamera", "Failed to start discovery");
+                        }
+                    });
+                }
+                break;
+        }
+        return true;
     }
 
     @Override
@@ -71,52 +132,26 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
     private void updateList() {
         List<PeerListItem> listItems = new ArrayList<>();
         for (WifiP2pDevice device : peers) {
-            listItems.add(new PeerListItem(device.deviceName, statusToString(device.status), device.deviceAddress));
+            listItems.add(new PeerListItem(device.deviceName, device.status, device.deviceAddress));
         }
         adapter.setList(listItems);
         adapter.notifyDataSetChanged();
     }
 
-    private String statusToString(int status) {
-        switch (status) {
-            case 0:
-                return getString(R.string.device_connected);
-            case 1:
-                return getString(R.string.device_invite);
-            case 2:
-                return getString(R.string.device_error);
-            case 3:
-                return getString(R.string.device_available);
-        }
-        return "";
-    }
-
-    @Override
-    public void receive(WifiP2pDevice parcelableExtra) {
-
+    private void updateList(List<PeerListItem> items) {
+        adapter.setList(items);
+        adapter.notifyDataSetChanged();
     }
 
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
-            case R.id.peer_search:
-                startDiscovery(new WifiP2pManager.ActionListener() {
-
-                    @Override
-                    public void onSuccess() {
-                        Log.d("SyncCamera", "Started discovery");
-                        updateList();
-                    }
-
-                    @Override
-                    public void onFailure(int reasonCode) {
-                        Log.d("SyncCamera", "Failed to start discovery");
-                        updateList();
-                    }
-                });
-                break;
             case R.id.send_command:
-                server.write("START".getBytes());
+                if (server != null) {
+                    server.write("START".getBytes());
+                } else {
+                    Log.d("SyncCamera", "Server not started");
+                }
         }
     }
 }

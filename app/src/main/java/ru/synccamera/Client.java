@@ -14,22 +14,22 @@ public class Client extends Thread {
     Socket socket;
     InetAddress hostAddress;
     SenderReceiver senderReceiver;
-    Handler.Callback callback;
+    Handler handler;
 
-    public Client(InetAddress hostAddress, Handler.Callback callback) {
+    public Client(InetAddress hostAddress, Handler handler) {
         this.hostAddress = hostAddress;
         socket = new Socket();
-        this.callback = callback;
+        this.handler = handler;
     }
 
     @Override
     public void run() {
         try {
-            socket.connect(new InetSocketAddress(hostAddress, port), 5000);
+            socket.connect(new InetSocketAddress(hostAddress, port), 500);
             Log.d("SyncCamera", "Client connected to " + hostAddress + ":" + port);
             senderReceiver = new SenderReceiver(socket);
-            senderReceiver.setCallback(callback);
-            senderReceiver.run();
+            senderReceiver.setCallback(handler);
+            senderReceiver.start();
         } catch (IOException e) {
             e.printStackTrace();
         }

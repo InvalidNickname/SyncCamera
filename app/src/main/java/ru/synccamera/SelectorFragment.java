@@ -7,6 +7,8 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 
 public class SelectorFragment extends Fragment implements View.OnClickListener {
@@ -20,6 +22,8 @@ public class SelectorFragment extends Fragment implements View.OnClickListener {
         View rootView = inflater.inflate(R.layout.fragment_selector, container, false);
         rootView.findViewById(R.id.set_controller).setOnClickListener(this);
         rootView.findViewById(R.id.set_camera).setOnClickListener(this);
+        Toolbar toolbar = rootView.findViewById(R.id.toolbar);
+        ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
         return rootView;
     }
 

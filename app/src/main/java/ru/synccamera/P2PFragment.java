@@ -2,6 +2,7 @@ package ru.synccamera;
 
 import android.content.Context;
 import android.content.IntentFilter;
+import android.net.wifi.WifiManager;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pInfo;
@@ -34,10 +35,10 @@ public class P2PFragment extends Fragment {
     protected WifiP2pManager manager;
     protected PeerBroadcastReceiver receiver;
     protected int id;
-
+    protected boolean isDiscovering = false;
     protected Server server;
     protected Client client;
-
+    private WifiManager.WifiLock wifiLock;
     private WifiP2pManager.PeerListListener peerListListener = new WifiP2pManager.PeerListListener() {
         @Override
         public void onPeersAvailable(WifiP2pDeviceList peerList) {
@@ -73,13 +74,13 @@ public class P2PFragment extends Fragment {
                 server.newConnection();
             } else {
                 Log.i("SyncCamera", "Connected to " + groupOwnerAddress + " as a client");
-                client = new Client(groupOwnerAddress, new Handler.Callback() {
+                client = new Client(groupOwnerAddress, new Handler(new Handler.Callback() {
                     @Override
                     public boolean handleMessage(@NonNull Message message) {
                         reactOnMessage(message);
                         return true;
                     }
-                });
+                }));
                 client.start();
             }
         }
@@ -105,6 +106,14 @@ public class P2PFragment extends Fragment {
         }
     }
 
+    protected void stopDiscovery(WifiP2pManager.ActionListener listener) {
+        try {
+            manager.stopPeerDiscovery(channel, listener);
+        } catch (SecurityException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -123,8 +132,20 @@ public class P2PFragment extends Fragment {
         channel = manager.initialize(getContext(), getMainLooper(), null);
     }
 
-    public void receive(WifiP2pDevice parcelableExtra) {
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        WifiManager wifiManager = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        wifiLock = wifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL, "SyncCamera");
+        wifiLock.acquire();
+    }
 
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        if (wifiLock.isHeld()) {
+            wifiLock.release();
+        }
     }
 
     @Override

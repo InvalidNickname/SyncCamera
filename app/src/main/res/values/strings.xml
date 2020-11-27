@@ -3,9 +3,11 @@
     <string name="set_controller">Это управляющий телефон</string>
     <string name="set_camera">Это камера</string>
     <string name="peer_search">Поиск устройств в сети</string>
-    <string name="device_connected">подключен</string>
+    <string name="device_connected">✓</string>
     <string name="device_invite">запрос</string>
-    <string name="device_error">ошибка</string>
-    <string name="device_available">доступен</string>
+    <string name="device_error">ОШИБКА</string>
+    <string name="device_available">+</string>
     <string name="start_rec">Начать запись</string>
+    <string name="begin_search">Начать поиск</string>
+    <string name="stop_search">Остановить поиск</string>
 </resources>

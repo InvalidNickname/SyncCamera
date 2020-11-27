@@ -4,7 +4,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.net.NetworkInfo;
-import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.util.Log;
 
@@ -51,13 +50,11 @@ public class PeerBroadcastReceiver extends BroadcastReceiver {
             NetworkInfo networkInfo = intent.getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
             if (networkInfo.isConnected()) {
                 manager.requestConnectionInfo(channel, connectionInfoListener);
-            } else {
-                P2PFragment fragment = (P2PFragment) activity.getSupportFragmentManager().findFragmentById(R.id.fragment_main);
-                fragment.reactOnPeers();
             }
-        } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {
             P2PFragment fragment = (P2PFragment) activity.getSupportFragmentManager().findFragmentById(R.id.fragment_main);
-            fragment.receive((WifiP2pDevice) intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_DEVICE));
+            fragment.reactOnPeers();
+        } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {
+
         }
     }
 }

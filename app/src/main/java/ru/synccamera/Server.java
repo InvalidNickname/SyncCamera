@@ -19,7 +19,6 @@ public class Server {
         try {
             serverSocketCreator.join();
             serverSocket = serverSocketCreator.getServerSocket();
-            Log.d("SyncCamera", String.valueOf(serverSocket == null));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
