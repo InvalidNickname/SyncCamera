@@ -159,7 +159,7 @@ public class CameraFragment extends P2PFragment {
             switch (theme) {
                 case "STRT":
                     // получена команда на старт записи
-                    long time = Long.parseLong(content) - timeDiff;
+                    long time = Long.parseLong(content) + timeDiff;
                     waitMainThread(time - System.currentTimeMillis());
                     if (preparedMediaRecorder) {
                         camera.unlock();
@@ -199,7 +199,7 @@ public class CameraFragment extends P2PFragment {
                         firstSync = Long.parseLong(p2);
                         String msg = "SYNC|" + mac;
                         client.write(msg);
-                    } else if (p1.equals(mac)) {
+                    } else if (p1.substring(3).equals(mac.substring(3))) {
                         // второй этап синхронизации, узнаем задержку
                         long ping = (Long.parseLong(p2) - firstSync) / 2;
                         // узнаем разницу во времени

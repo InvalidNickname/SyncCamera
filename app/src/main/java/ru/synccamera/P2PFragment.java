@@ -2,7 +2,6 @@ package ru.synccamera;
 
 import android.content.Context;
 import android.content.IntentFilter;
-import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
@@ -20,8 +19,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
 import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import static android.os.Looper.getMainLooper;
@@ -97,6 +98,34 @@ public class P2PFragment extends Fragment {
 
     }
 
+    public static String getMacAddress() {
+        try {
+            List<NetworkInterface> all = Collections.list(NetworkInterface.getNetworkInterfaces());
+            for (NetworkInterface nif : all) {
+                if (!nif.getName().equalsIgnoreCase("wlan0")) continue;
+
+                byte[] macBytes = nif.getHardwareAddress();
+                if (macBytes == null) {
+                    return "";
+                }
+
+                StringBuilder res1 = new StringBuilder();
+                for (byte b : macBytes) {
+                    res1.append(String.format("%02X:", b));
+                }
+
+                if (res1.length() > 0) {
+                    res1.deleteCharAt(res1.length() - 1);
+                }
+                Log.d("SyncCamera", "MAC: " + res1.toString());
+                return res1.toString();
+            }
+        } catch (Exception ex) {
+            Log.d("SyncCamera", "Can't get MAC");
+        }
+        return "02:00:00:00:00:00";
+    }
+
     protected void reactOnMessage(Message message) {
 
     }
@@ -142,8 +171,7 @@ public class P2PFragment extends Fragment {
         wifiLock = wifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL, "SyncCamera");
         wifiLock.acquire();
 
-        WifiInfo info = wifiManager.getConnectionInfo();
-        mac = info.getMacAddress();
+        mac = getMacAddress();
     }
 
     @Override
