@@ -36,7 +36,7 @@ public class P2PFragment extends Fragment {
     protected Server server;
     protected Client client;
     private WifiManager.WifiLock wifiLock;
-    private Context context;
+    protected Context context;
 
     private WifiP2pManager.PeerListListener peerListListener = new WifiP2pManager.PeerListListener() {
         @Override

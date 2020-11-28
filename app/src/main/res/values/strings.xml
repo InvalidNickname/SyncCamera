@@ -14,4 +14,15 @@
     <string name="stop_recording">Остановить запись</string>
     <string name="refused_to_send_command_while_discovering">Перед отправкой команды остановите поиск устройств</string>
     <string name="refused_to_send_command_no_active_devices">Нет подключенных устройств</string>
+    <string name="pref_version">Версия %s</string>
+    <string name="open_settings">Открыть настройки</string>
+    <string name="send_from">E-mail отправителя (Google аккаунт)</string>
+    <string name="from_password">Пароль отправителя (Google аккаунт)</string>
+    <string name="send_command_upload">Загрузить на диск</string>
+    <string name="refused_to_send_upload_command_while_recording">Перед отправкой закончите запись видео</string>
+    <string name="refused_to_send_upload_command_no_videos">Видео ещё не было записано</string>
+    <string name="refused_to_send_upload_command_no_email_and_pass">Укажите логин и пароль Google аккаунта в настройках</string>
+    <string name="refused_to_send_upload_command_no_email">Укажите логин от Google аккаунта в настройках</string>
+    <string name="refused_to_send_upload_command_no_pass">Укажите пароль от Google аккаунта в настройках</string>
+    <string name="server_not_started">Сервер не запущен - нет активных подключений</string>
 </resources>

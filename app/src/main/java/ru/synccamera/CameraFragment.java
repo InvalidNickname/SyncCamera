@@ -35,7 +35,7 @@ public class CameraFragment extends P2PFragment {
     private MediaRecorder mediaRecorder;
     private boolean preparedMediaRecorder;
     private ImageView recordingMark;
-    private File nextSavePath;
+    private File nextSavePath, prevSavePath;
     private boolean videoRecorded = false;
 
     public CameraFragment() {
@@ -74,7 +74,7 @@ public class CameraFragment extends P2PFragment {
 
         recordingMark = rootView.findViewById(R.id.recording_mark);
 
-        Toolbar toolbar = rootView.findViewById(R.id.toolbar);
+        Toolbar toolbar = getActivity().findViewById(R.id.toolbar);
         ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
         setHasOptionsMenu(true);
 
@@ -152,9 +152,11 @@ public class CameraFragment extends P2PFragment {
         String temp = new String(buffer, 0, message.arg1);
         Log.d("SyncCamera", "Got message " + temp + " at " + System.currentTimeMillis());
         String theme = temp.substring(0, 4);
+        String content = temp.substring(5);
         switch (theme) {
             case "STRT":
-                long time = Long.parseLong(temp.substring(5));
+                // получена команда на старт записи
+                long time = Long.parseLong(content);
                 waitMainThread(time - System.currentTimeMillis());
                 if (preparedMediaRecorder) {
                     camera.unlock();
@@ -167,13 +169,20 @@ public class CameraFragment extends P2PFragment {
                 }
                 break;
             case "STOP":
-                long time2 = Long.parseLong(temp.substring(5));
+                // получена команда на остановку записи
+                long time2 = Long.parseLong(content);
                 waitMainThread(time2 - System.currentTimeMillis());
                 mediaRecorder.stop();
                 camera.lock();
                 Log.d("SyncCamera", "Stopped recording video, resetting MediaRecorder");
                 preparedMediaRecorder = prepareMediaRecorder();
                 recordingMark.setVisibility(View.INVISIBLE);
+                break;
+            case "UPLD":
+                // получена команда на загрузку на диск
+                int dividerIndex = content.indexOf('|');
+                String email = content.substring(0, dividerIndex);
+                String password = content.substring(dividerIndex + 1);
                 break;
         }
     }
@@ -211,6 +220,7 @@ public class CameraFragment extends P2PFragment {
         mediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
         mediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
         mediaRecorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH));
+        prevSavePath = nextSavePath;
         nextSavePath = getOutputMediaFile();
         if (nextSavePath == null) {
             releaseMediaRecorder();

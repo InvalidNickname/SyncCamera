@@ -22,7 +22,7 @@ public class SelectorFragment extends Fragment implements View.OnClickListener {
         View rootView = inflater.inflate(R.layout.fragment_selector, container, false);
         rootView.findViewById(R.id.set_controller).setOnClickListener(this);
         rootView.findViewById(R.id.set_camera).setOnClickListener(this);
-        Toolbar toolbar = rootView.findViewById(R.id.toolbar);
+        Toolbar toolbar = getActivity().findViewById(R.id.toolbar);
         ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
         return rootView;
     }

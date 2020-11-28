@@ -1,5 +1,6 @@
 package ru.synccamera;
 
+import android.content.SharedPreferences;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pManager;
@@ -18,6 +19,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -28,6 +30,7 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
 
     private ListRVAdapter adapter;
     private boolean isRecording = false;
+    private boolean wasRecording = false;
     private List<PeerListItem> currentActive = new ArrayList<>();
     private Button recordButton;
 
@@ -44,8 +47,11 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
         recordButton = rootView.findViewById(R.id.send_command);
         recordButton.setOnClickListener(this);
 
+        // кнопка загрузки на диск
+        rootView.findViewById(R.id.upload).setOnClickListener(this);
+
         // тулбар
-        Toolbar toolbar = rootView.findViewById(R.id.toolbar);
+        Toolbar toolbar = getActivity().findViewById(R.id.toolbar);
         ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
         setHasOptionsMenu(true);
 
@@ -111,6 +117,14 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
                         }
                     });
                 }
+                break;
+            case R.id.settings:
+                Log.d("SyncCamera", "Opening settings");
+                getActivity().getSupportFragmentManager().beginTransaction()
+                        .setReorderingAllowed(true)
+                        .replace(R.id.fragment_main, SettingsFragment.class, null)
+                        .addToBackStack(null)
+                        .commit();
                 break;
         }
         return true;
@@ -192,6 +206,7 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
                             String message = "STRT|" + executeTime;
                             server.write(message.getBytes());
                             isRecording = true;
+                            wasRecording = true;
                             currentActive = new ArrayList<>();
                             for (WifiP2pDevice device : peers) {
                                 if (device.status == 0) {
@@ -203,6 +218,34 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
                     }
                 } else {
                     Log.d("SyncCamera", "Server not started");
+                    Toast.makeText(getContext(), R.string.server_not_started, Toast.LENGTH_LONG).show();
+                }
+                break;
+            case R.id.upload:
+                if (isRecording) {
+                    Log.d("SyncCamera", "Refused to send upload command while recording");
+                    Toast.makeText(getContext(), R.string.refused_to_send_upload_command_while_recording, Toast.LENGTH_LONG).show();
+                } else if (!wasRecording) {
+                    Log.d("SyncCamera", "Refused to send upload command - no videos");
+                    Toast.makeText(getContext(), R.string.refused_to_send_upload_command_no_videos, Toast.LENGTH_LONG).show();
+                } else {
+                    // посылаем команду на отправку записи
+                    SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+                    String from = preferences.getString("from", "");
+                    String pass = preferences.getString("pass", "");
+                    if (from.equals("") && pass.equals("")) {
+                        Log.d("SyncCamera", "Refused to send upload command - no e-mail and password");
+                        Toast.makeText(getContext(), R.string.refused_to_send_upload_command_no_email_and_pass, Toast.LENGTH_LONG).show();
+                    } else if (from.equals("")) {
+                        Log.d("SyncCamera", "Refused to send upload command - no e-mail");
+                        Toast.makeText(getContext(), R.string.refused_to_send_upload_command_no_email, Toast.LENGTH_LONG).show();
+                    } else if (pass.equals("")) {
+                        Log.d("SyncCamera", "Refused to send upload command - no password");
+                        Toast.makeText(getContext(), R.string.refused_to_send_upload_command_no_pass, Toast.LENGTH_LONG).show();
+                    } else {
+                        String message = "UPLD|" + from + "|" + pass;
+                        server.write(message.getBytes());
+                    }
                 }
         }
     }
