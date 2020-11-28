@@ -94,7 +94,7 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
                             updateList(items);
                             isDiscovering = false;
                             String message = "SYNC|0|" + System.currentTimeMillis();
-                            server.write(message.getBytes());
+                            server.write(message);
                         }
 
                         @Override
@@ -136,15 +136,18 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
     @Override
     protected void reactOnMessage(Message message) {
         byte[] buffer = (byte[]) message.obj;
-        String temp = new String(buffer, 0, message.arg1);
-        Log.d("SyncCamera", "Got message " + temp + " at " + System.currentTimeMillis());
-        String theme = temp.substring(0, 4);
-        String content = temp.substring(5);
-        switch (theme) {
-            case "SYNC":
-                String msg = temp + "|" + System.currentTimeMillis();
-                server.write(msg.getBytes());
-                break;
+        String st = new String(buffer, 0, message.arg1);
+        String[] messages = st.split(";");
+        for (String temp : messages) {
+            Log.d("SyncCamera", "Got message " + temp + " at " + System.currentTimeMillis());
+            String theme = temp.substring(0, 4);
+            String content = temp.substring(5);
+            switch (theme) {
+                case "SYNC":
+                    String msg = temp + "|" + System.currentTimeMillis();
+                    server.write(msg);
+                    break;
+            }
         }
     }
 
@@ -216,13 +219,13 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
                         if (isRecording) {
                             // посылаем команду на остановку записи
                             String message = "STOP|" + executeTime;
-                            server.write(message.getBytes());
+                            server.write(message);
                             isRecording = false;
                             recordButton.setText(R.string.start_recording);
                         } else {
                             // посылаем команду на начало записи
                             String message = "STRT|" + executeTime;
-                            server.write(message.getBytes());
+                            server.write(message);
                             isRecording = true;
                             wasRecording = true;
                             currentActive = new ArrayList<>();
@@ -262,7 +265,7 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
                         Toast.makeText(getContext(), R.string.refused_to_send_upload_command_no_pass, Toast.LENGTH_LONG).show();
                     } else {
                         String message = "UPLD|" + from + "|" + pass;
-                        server.write(message.getBytes());
+                        server.write(message);
                     }
                 }
         }

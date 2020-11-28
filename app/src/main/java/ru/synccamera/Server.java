@@ -27,11 +27,12 @@ public class Server {
         }
     }
 
-    public void write(byte[] bytes) {
+    public void write(String string) {
         Log.d("SyncCamera", "Sending to " + senderReceiver.size() + " clients");
+        string += ";";
         for (SenderReceiver receiver : senderReceiver) {
             if (receiver != null) {
-                receiver.write(bytes);
+                receiver.write(string.getBytes());
             } else {
                 Log.d("SyncCamera", "Server socket isn't ready");
             }

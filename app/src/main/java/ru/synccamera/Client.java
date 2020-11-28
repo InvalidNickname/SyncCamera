@@ -23,9 +23,10 @@ public class Client extends Thread {
         this.handler = handler;
     }
 
-    public void write(byte[] bytes) {
+    public void write(String string) {
+        string += ";";
         if (senderReceiver != null) {
-            senderReceiver.write(bytes);
+            senderReceiver.write(string.getBytes());
         }
     }
 

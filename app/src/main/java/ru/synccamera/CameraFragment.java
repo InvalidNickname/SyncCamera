@@ -150,62 +150,65 @@ public class CameraFragment extends P2PFragment {
     @Override
     protected void reactOnMessage(Message message) {
         byte[] buffer = (byte[]) message.obj;
-        String temp = new String(buffer, 0, message.arg1);
-        Log.d("SyncCamera", "Got message " + temp + " at " + System.currentTimeMillis());
-        String theme = temp.substring(0, 4);
-        String content = temp.substring(5);
-        switch (theme) {
-            case "STRT":
-                // получена команда на старт записи
-                long time = Long.parseLong(content) - timeDiff;
-                waitMainThread(time - System.currentTimeMillis());
-                if (preparedMediaRecorder) {
-                    camera.unlock();
-                    mediaRecorder.start();
-                    Log.d("SyncCamera", "Recording video, started at " + System.currentTimeMillis());
-                    recordingMark.setVisibility(View.VISIBLE);
-                    videoRecorded = true;
-                } else {
-                    Log.d("SyncCamera", "MediaRecorder isn't ready, can't start");
-                }
-                break;
-            case "STOP":
-                // получена команда на остановку записи
-                long time2 = Long.parseLong(content) + timeDiff;
-                waitMainThread(time2 - System.currentTimeMillis());
-                mediaRecorder.stop();
-                camera.lock();
-                Log.d("SyncCamera", "Stopped recording video, resetting MediaRecorder");
-                preparedMediaRecorder = prepareMediaRecorder();
-                recordingMark.setVisibility(View.INVISIBLE);
-                break;
-            case "UPLD":
-                // получена команда на загрузку на диск
-                int dividerIndex = content.indexOf('|');
-                String email = content.substring(0, dividerIndex);
-                String password = content.substring(dividerIndex + 1);
-                /*
-                 *  TODO загрузка файла по prevSavePath
-                 */
-                break;
-            case "SYNC":
-                int divider = content.indexOf("|");
-                String p1 = content.substring(0, divider);
-                String p2 = content.substring(divider + 1);
-                if (p1.equals("0")) {
-                    // первый этап синхронизации, отправляем серверу ответное сообщение
-                    firstSync = Long.parseLong(p2);
-                    String msg = "SYNC|" + mac;
-                    client.write(msg.getBytes());
-                } else if (p1.equals(mac)) {
-                    // второй этап синхронизации, узнаем задержку
-                    long ping = (Long.parseLong(p2) - firstSync) / 2;
-                    // узнаем разницу во времени
-                    timeDiff = (System.currentTimeMillis() - ping) - firstSync;
-                    Log.d("SyncCamera", "Ping: " + ping);
-                    Log.d("SyncCamera", "Time difference: " + timeDiff);
-                }
-                break;
+        String st = new String(buffer, 0, message.arg1);
+        String[] messages = st.split(";");
+        for (String temp : messages) {
+            Log.d("SyncCamera", "Got message " + temp + " at " + System.currentTimeMillis());
+            String theme = temp.substring(0, 4);
+            String content = temp.substring(5);
+            switch (theme) {
+                case "STRT":
+                    // получена команда на старт записи
+                    long time = Long.parseLong(content) - timeDiff;
+                    waitMainThread(time - System.currentTimeMillis());
+                    if (preparedMediaRecorder) {
+                        camera.unlock();
+                        mediaRecorder.start();
+                        Log.d("SyncCamera", "Recording video, started at " + System.currentTimeMillis());
+                        recordingMark.setVisibility(View.VISIBLE);
+                        videoRecorded = true;
+                    } else {
+                        Log.d("SyncCamera", "MediaRecorder isn't ready, can't start");
+                    }
+                    break;
+                case "STOP":
+                    // получена команда на остановку записи
+                    long time2 = Long.parseLong(content) + timeDiff;
+                    waitMainThread(time2 - System.currentTimeMillis());
+                    mediaRecorder.stop();
+                    camera.lock();
+                    Log.d("SyncCamera", "Stopped recording video, resetting MediaRecorder");
+                    preparedMediaRecorder = prepareMediaRecorder();
+                    recordingMark.setVisibility(View.INVISIBLE);
+                    break;
+                case "UPLD":
+                    // получена команда на загрузку на диск
+                    int dividerIndex = content.indexOf('|');
+                    String email = content.substring(0, dividerIndex);
+                    String password = content.substring(dividerIndex + 1);
+                    /*
+                     *  TODO загрузка файла по prevSavePath
+                     */
+                    break;
+                case "SYNC":
+                    int divider = content.indexOf("|");
+                    String p1 = content.substring(0, divider);
+                    String p2 = content.substring(divider + 1);
+                    if (p1.equals("0")) {
+                        // первый этап синхронизации, отправляем серверу ответное сообщение
+                        firstSync = Long.parseLong(p2);
+                        String msg = "SYNC|" + mac;
+                        client.write(msg);
+                    } else if (p1.equals(mac)) {
+                        // второй этап синхронизации, узнаем задержку
+                        long ping = (Long.parseLong(p2) - firstSync) / 2;
+                        // узнаем разницу во времени
+                        timeDiff = (System.currentTimeMillis() - ping) - firstSync;
+                        Log.d("SyncCamera", "Ping: " + ping);
+                        Log.d("SyncCamera", "Time difference: " + timeDiff);
+                    }
+                    break;
+            }
         }
     }
 

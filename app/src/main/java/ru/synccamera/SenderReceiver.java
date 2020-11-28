@@ -49,7 +49,7 @@ public class SenderReceiver extends Thread {
                 }
             } catch (IOException e) {
                 Log.d("SyncCamera", "Error while receiving messages");
-                //e.printStackTrace();
+                break;
             }
         }
         Log.d("SyncCamera", "End of receiving");
