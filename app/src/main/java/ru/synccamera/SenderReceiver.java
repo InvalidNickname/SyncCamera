@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.util.Arrays;
 
 public class SenderReceiver extends Thread {
 
@@ -44,6 +43,7 @@ public class SenderReceiver extends Thread {
                     }
                 }
             } catch (IOException e) {
+                Log.d("SyncCamera", "Error while receiving messages");
                 //e.printStackTrace();
             }
         }
@@ -58,7 +58,8 @@ public class SenderReceiver extends Thread {
         this.handler = handler;
     }
 
-    static class AsyncWriter extends AsyncTask {
+    @SuppressWarnings("deprecation")
+    static class AsyncWriter extends AsyncTask<Void, Void, Void> {
 
         private byte[] bytes;
         private OutputStream stream;
@@ -69,14 +70,15 @@ public class SenderReceiver extends Thread {
         }
 
         @Override
-        protected Object doInBackground(Object[] objects) {
-            Log.d("SyncCamera", "Trying to send \"" + Arrays.toString(bytes) + "\"");
+        protected Void doInBackground(Void... voids) {
+            String string = new String(bytes);
+            Log.d("SyncCamera", "Trying to send \"" + string + "\"");
             try {
                 stream.write(bytes);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            Log.d("SyncCamera", "Sent \"" + Arrays.toString(bytes) + "\"");
+            Log.d("SyncCamera", "Sent \"" + string + "\"");
             return null;
         }
     }

@@ -12,9 +12,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -35,11 +32,12 @@ public class P2PFragment extends Fragment {
     protected WifiP2pManager.Channel channel;
     protected WifiP2pManager manager;
     protected PeerBroadcastReceiver receiver;
-    protected int id;
     protected boolean isDiscovering = false;
     protected Server server;
     protected Client client;
     private WifiManager.WifiLock wifiLock;
+    private Context context;
+
     private WifiP2pManager.PeerListListener peerListListener = new WifiP2pManager.PeerListListener() {
         @Override
         public void onPeersAvailable(WifiP2pDeviceList peerList) {
@@ -67,15 +65,16 @@ public class P2PFragment extends Fragment {
         @Override
         public void onConnectionInfoAvailable(WifiP2pInfo wifiP2pInfo) {
             final InetAddress groupOwnerAddress = wifiP2pInfo.groupOwnerAddress;
+            final int port = context.getResources().getInteger(R.integer.port);
             if (wifiP2pInfo.groupFormed && wifiP2pInfo.isGroupOwner) {
                 Log.i("SyncCamera", "Connected as a host " + groupOwnerAddress);
                 if (server == null) {
-                    server = new Server();
+                    server = new Server(port);
                 }
                 server.newConnection();
             } else {
                 Log.i("SyncCamera", "Connected to " + groupOwnerAddress + " as a client");
-                client = new Client(groupOwnerAddress, new Handler(new Handler.Callback() {
+                client = new Client(port, groupOwnerAddress, new Handler(new Handler.Callback() {
                     @Override
                     public boolean handleMessage(@NonNull Message message) {
                         reactOnMessage(message);
@@ -87,8 +86,8 @@ public class P2PFragment extends Fragment {
         }
     };
 
-    public P2PFragment(int layoutId) {
-        id = layoutId;
+    public P2PFragment() {
+
     }
 
     protected void reactOnMessage(Message message) {
@@ -115,13 +114,6 @@ public class P2PFragment extends Fragment {
         }
     }
 
-    @Nullable
-    @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View rootView = inflater.inflate(id, container, false);
-        return rootView;
-    }
-
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -129,13 +121,16 @@ public class P2PFragment extends Fragment {
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
-        manager = (WifiP2pManager) getContext().getSystemService(Context.WIFI_P2P_SERVICE);
-        channel = manager.initialize(getContext(), getMainLooper(), null);
+        manager = (WifiP2pManager) context.getSystemService(Context.WIFI_P2P_SERVICE);
+        channel = manager.initialize(context, getMainLooper(), null);
     }
 
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
+
+        this.context = context;
+
         WifiManager wifiManager = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         wifiLock = wifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL, "SyncCamera");
         wifiLock.acquire();
@@ -165,7 +160,7 @@ public class P2PFragment extends Fragment {
                 }
             });
         } catch (SecurityException e) {
-            Log.d("SyncCamera","Failed to cancel connections");
+            Log.d("SyncCamera", "Failed to cancel connections");
         }
         if (wifiLock.isHeld()) {
             wifiLock.release();
@@ -176,13 +171,13 @@ public class P2PFragment extends Fragment {
     public void onResume() {
         super.onResume();
         receiver = new PeerBroadcastReceiver((AppCompatActivity) getContext(), peerListListener, manager, channel, connectionInfoListener);
-        getContext().registerReceiver(receiver, intentFilter);
+        context.registerReceiver(receiver, intentFilter);
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        getContext().unregisterReceiver(receiver);
+        context.unregisterReceiver(receiver);
     }
 
 }

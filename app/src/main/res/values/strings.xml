@@ -12,4 +12,6 @@
     <string name="stop_search">Остановить поиск</string>
     <string name="device_connection_lost_while_recording">ОШИБКА</string>
     <string name="stop_recording">Остановить запись</string>
+    <string name="refused_to_send_command_while_discovering">Перед отправкой команды остановите поиск устройств</string>
+    <string name="refused_to_send_command_no_active_devices">Нет подключенных устройств</string>
 </resources>

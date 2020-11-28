@@ -12,6 +12,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -31,7 +32,7 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
     private Button recordButton;
 
     public ControllerFragment() {
-        super(R.layout.fragment_controller);
+
     }
 
     @Nullable
@@ -39,13 +40,16 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_controller, container, false);
 
+        // кнопка начала/окончания записи
         recordButton = rootView.findViewById(R.id.send_command);
         recordButton.setOnClickListener(this);
 
+        // тулбар
         Toolbar toolbar = rootView.findViewById(R.id.toolbar);
         ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
         setHasOptionsMenu(true);
 
+        // список устройств
         RecyclerView list = rootView.findViewById(R.id.peer_list);
         list.setLayoutManager(new LinearLayoutManager(getContext()));
         adapter = new ListRVAdapter(new ArrayList<PeerListItem>(), this);
@@ -63,14 +67,17 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
     @Override
     public boolean onOptionsItemSelected(@NonNull final MenuItem item) {
         switch (item.getItemId()) {
+            // кнопка смены режима поиска
             case R.id.toggle_discovery:
                 if (isDiscovering) {
+                    // остановка поиска, меняем иконку кнопки поиска
                     item.setIcon(R.drawable.ic_refresh);
                     stopDiscovery(new WifiP2pManager.ActionListener() {
 
                         @Override
                         public void onSuccess() {
                             Log.d("SyncCamera", "Stopped discovery");
+                            // создаем новый список из всех подключенных устройств
                             List<PeerListItem> items = new ArrayList<>();
                             for (WifiP2pDevice device : peers) {
                                 if (device.status == 0) {
@@ -87,6 +94,7 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
                         }
                     });
                 } else {
+                    // начало поиска, меняем иконку кнопки поиска
                     item.setIcon(R.drawable.ic_stop);
                     startDiscovery(new WifiP2pManager.ActionListener() {
 
@@ -143,6 +151,7 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
             listItems.add(new PeerListItem(device.deviceName, device.status, device.deviceAddress));
         }
         if (isRecording) {
+            // проверяем, не отвалилось ли какое-либо устройство во время записи
             for (int i = 0; i < currentActive.size(); ++i) {
                 if (!listItems.contains(currentActive.get(i))) {
                     currentActive.get(i).setStatus(4);
@@ -164,20 +173,30 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
         switch (view.getId()) {
             case R.id.send_command:
                 if (server != null) {
-                    if (isRecording) {
-                        server.write("STOP".getBytes());
-                        isRecording = false;
-                        recordButton.setText(R.string.start_recording);
+                    if (isDiscovering) {
+                        Log.d("SyncCamera", "Refused to send command while discovering");
+                        Toast.makeText(getContext(), R.string.refused_to_send_command_while_discovering, Toast.LENGTH_LONG).show();
+                    } else if (server.getNumberOfConnections() == 0) {
+                        Log.d("SyncCamera", "Refused to send command without active connections");
+                        Toast.makeText(getContext(), R.string.refused_to_send_command_no_active_devices, Toast.LENGTH_LONG).show();
                     } else {
-                        server.write("START".getBytes());
-                        isRecording = true;
-                        currentActive = new ArrayList<>();
-                        for (WifiP2pDevice device : peers) {
-                            if (device.status == 0) {
-                                currentActive.add(new PeerListItem(device.deviceName, device.status, device.deviceAddress));
+                        if (isRecording) {
+                            // посылаем команду на остановку записи
+                            server.write("STOP".getBytes());
+                            isRecording = false;
+                            recordButton.setText(R.string.start_recording);
+                        } else {
+                            // посылаем команду на начало записи
+                            server.write("START".getBytes());
+                            isRecording = true;
+                            currentActive = new ArrayList<>();
+                            for (WifiP2pDevice device : peers) {
+                                if (device.status == 0) {
+                                    currentActive.add(new PeerListItem(device.deviceName, device.status, device.deviceAddress));
+                                }
                             }
+                            recordButton.setText(R.string.stop_recording);
                         }
-                        recordButton.setText(R.string.stop_recording);
                     }
                 } else {
                     Log.d("SyncCamera", "Server not started");

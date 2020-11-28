@@ -27,6 +27,7 @@ import androidx.appcompat.widget.Toolbar;
 import java.io.File;
 import java.io.IOException;
 
+@SuppressWarnings("deprecation")
 public class CameraFragment extends P2PFragment {
 
     private Camera camera;
@@ -34,9 +35,11 @@ public class CameraFragment extends P2PFragment {
     private MediaRecorder mediaRecorder;
     private boolean preparedMediaRecorder;
     private ImageView recordingMark;
+    private File nextSavePath;
+    private boolean videoRecorded = false;
 
     public CameraFragment() {
-        super(R.layout.fragment_camera);
+
     }
 
     private static Camera getCameraInstance() {
@@ -51,7 +54,7 @@ public class CameraFragment extends P2PFragment {
     }
 
     private static File getOutputMediaFile() {
-        File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "SyncCamera");
+        File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), "SyncCamera");
         if (!mediaStorageDir.exists()) {
             if (!mediaStorageDir.mkdirs()) {
                 Log.d("SyncCamera", "Failed to create save directory");
@@ -61,7 +64,6 @@ public class CameraFragment extends P2PFragment {
         String timeStamp = String.valueOf(System.currentTimeMillis());
         File mediaFile;
         mediaFile = new File(mediaStorageDir.getPath() + File.separator + timeStamp + ".mp4");
-
         return mediaFile;
     }
 
@@ -156,6 +158,7 @@ public class CameraFragment extends P2PFragment {
                     mediaRecorder.start();
                     Log.d("SyncCamera", "Recording video, started at " + System.currentTimeMillis());
                     recordingMark.setVisibility(View.VISIBLE);
+                    videoRecorded = true;
                 } else {
                     Log.d("SyncCamera", "MediaRecorder isn't ready, can't start");
                 }
@@ -193,13 +196,16 @@ public class CameraFragment extends P2PFragment {
         mediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
         mediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
         mediaRecorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH));
-        String filePath = getOutputMediaFile().toString();
-        Log.d("SyncCamera", "New file will be saved at: " + filePath);
-        mediaRecorder.setOutputFile(filePath);
+        nextSavePath = getOutputMediaFile();
+        if (nextSavePath == null) {
+            releaseMediaRecorder();
+            return false;
+        }
+        Log.d("SyncCamera", "New file will be saved at: " + nextSavePath.toString());
+        mediaRecorder.setOutputFile(nextSavePath.toString());
         mediaRecorder.setPreviewDisplay(cameraPreview.getHolder().getSurface());
         Camera.Size maxSize = camera.getParameters().getSupportedPreviewSizes().get(0);
         Log.d("SyncCamera", "Max video size is " + maxSize.height + "*" + maxSize.width);
-        //mediaRecorder.setVideoSize(maxSize.width, maxSize.height);
         try {
             mediaRecorder.prepare();
         } catch (IllegalStateException e) {
@@ -208,15 +214,23 @@ public class CameraFragment extends P2PFragment {
             return false;
         } catch (IOException e) {
             Log.d("SyncCamera", "IOException preparing MediaRecorder");
-            e.printStackTrace();
             releaseMediaRecorder();
             return false;
         }
         Log.d("SyncCamera", "MediaRecorder prepared");
+        videoRecorded = false;
         return true;
     }
 
     private void releaseMediaRecorder() {
+        if (nextSavePath != null && !videoRecorded) {
+            if (nextSavePath.delete()) {
+                Log.d("SyncCamera", "Video wasn't recorded, deleted temp file");
+            } else {
+                Log.d("SyncCamera", "Video wasn't recorded, failed to delete temp file");
+            }
+        }
+        videoRecorded = false;
         if (mediaRecorder != null) {
             mediaRecorder.reset();
             mediaRecorder.release();

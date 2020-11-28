@@ -10,13 +10,14 @@ import java.net.Socket;
 
 public class Client extends Thread {
 
-    private final int port = 8888;
     Socket socket;
     InetAddress hostAddress;
     SenderReceiver senderReceiver;
     Handler handler;
+    private int port;
 
-    public Client(InetAddress hostAddress, Handler handler) {
+    public Client(int port, InetAddress hostAddress, Handler handler) {
+        this.port = port;
         this.hostAddress = hostAddress;
         socket = new Socket();
         this.handler = handler;

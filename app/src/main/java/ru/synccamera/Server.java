@@ -13,8 +13,8 @@ public class Server {
     private List<SenderReceiver> senderReceiver = new ArrayList<>();
     private ServerSocket serverSocket;
 
-    public Server() {
-        ServerSocketCreator serverSocketCreator = new ServerSocketCreator();
+    public Server(int port) {
+        ServerSocketCreator serverSocketCreator = new ServerSocketCreator(port);
         serverSocketCreator.start();
         try {
             serverSocketCreator.join();
@@ -49,10 +49,18 @@ public class Server {
         }
     }
 
+    public int getNumberOfConnections() {
+        return senderReceiver.size();
+    }
+
     static class ServerSocketCreator extends Thread {
 
-        private final int port = 8888;
+        private int port;
         private volatile ServerSocket serverSocket;
+
+        public ServerSocketCreator(int port) {
+            this.port = port;
+        }
 
         @Override
         public void run() {
@@ -89,7 +97,7 @@ public class Server {
                 socket = serverSocket.accept();
                 Log.d("SyncCamera", "Server socket opened");
             } catch (IOException e) {
-                e.printStackTrace();
+                Log.d("SyncCamera", "Failed to open server socket");
             }
         }
 
