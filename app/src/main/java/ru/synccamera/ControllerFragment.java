@@ -34,6 +34,7 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
     private boolean wasRecording = false;
     private List<PeerListItem> currentActive = new ArrayList<>();
     private Button recordButton;
+    private boolean groupCreated = false;
 
     public ControllerFragment() {
 
@@ -93,8 +94,10 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
                             }
                             updateList(items);
                             isDiscovering = false;
-                            String message = "SYNC|0|" + System.currentTimeMillis();
-                            server.write(message);
+                            if (server != null) {
+                                String message = "SYNC|0|" + System.currentTimeMillis();
+                                server.write(message);
+                            }
                         }
 
                         @Override
@@ -156,25 +159,46 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
         updateList();
     }
 
+    private void connect(WifiP2pManager manager, WifiP2pManager.Channel channel, WifiP2pConfig config) throws SecurityException {
+        final String address = config.deviceAddress;
+        manager.connect(channel, config, new WifiP2pManager.ActionListener() {
+
+            @Override
+            public void onSuccess() {
+                Log.d("SyncCamera", "Connected to " + address);
+                updateList();
+            }
+
+            @Override
+            public void onFailure(int reason) {
+                Log.d("SyncCamera", "Failed to connect to " + address);
+                updateList();
+            }
+        });
+    }
+
     public void connectToPeer(final String address) {
         try {
-            WifiP2pConfig config = new WifiP2pConfig();
+            final WifiP2pConfig config = new WifiP2pConfig();
             config.deviceAddress = address;
             config.groupOwnerIntent = 15;
-            manager.connect(channel, config, new WifiP2pManager.ActionListener() {
+            if (!groupCreated) {
+                manager.createGroup(channel, new WifiP2pManager.ActionListener() {
+                    @Override
+                    public void onSuccess() {
+                        Log.d("SyncCamera", "Group created");
+                        groupCreated = true;
+                        connect(manager, channel, config);
+                    }
 
-                @Override
-                public void onSuccess() {
-                    Log.d("SyncCamera", "Connected to " + address);
-                    updateList();
-                }
-
-                @Override
-                public void onFailure(int reason) {
-                    Log.d("SyncCamera", "Failed to connect to " + address);
-                    updateList();
-                }
-            });
+                    @Override
+                    public void onFailure(int reason) {
+                        Log.d("SyncCamera", "Failed to create a group");
+                    }
+                });
+            } else {
+                connect(manager, channel, config);
+            }
         } catch (SecurityException e) {
             e.printStackTrace();
         }

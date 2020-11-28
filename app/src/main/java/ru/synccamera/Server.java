@@ -40,6 +40,7 @@ public class Server {
     }
 
     public void newConnection() {
+        if (serverSocket == null) return;
         ConnectionEstablisher connectionEstablisher = new ConnectionEstablisher(serverSocket);
         connectionEstablisher.start();
         try {

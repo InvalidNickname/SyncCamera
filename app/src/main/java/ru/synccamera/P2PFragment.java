@@ -40,6 +40,8 @@ public class P2PFragment extends Fragment {
     protected Context context;
     protected String mac;
     private WifiManager.WifiLock wifiLock;
+    private boolean firstCall = true;
+
     private WifiP2pManager.PeerListListener peerListListener = new WifiP2pManager.PeerListListener() {
         @Override
         public void onPeersAvailable(WifiP2pDeviceList peerList) {
@@ -70,16 +72,20 @@ public class P2PFragment extends Fragment {
             final int port = context.getResources().getInteger(R.integer.port);
             if (wifiP2pInfo.groupFormed && wifiP2pInfo.isGroupOwner) {
                 Log.i("SyncCamera", "Connected as a host " + groupOwnerAddress);
-                if (server == null) {
-                    server = new Server(port, new Handler(new Handler.Callback() {
-                        @Override
-                        public boolean handleMessage(@NonNull Message message) {
-                            reactOnMessage(message);
-                            return true;
-                        }
-                    }));
+                if (firstCall) {
+                    firstCall = false;
+                } else {
+                    if (server == null) {
+                        server = new Server(port, new Handler(new Handler.Callback() {
+                            @Override
+                            public boolean handleMessage(@NonNull Message message) {
+                                reactOnMessage(message);
+                                return true;
+                            }
+                        }));
+                    }
+                    server.newConnection();
                 }
-                server.newConnection();
             } else {
                 Log.i("SyncCamera", "Connected to " + groupOwnerAddress + " as a client");
                 client = new Client(port, groupOwnerAddress, new Handler(new Handler.Callback() {
