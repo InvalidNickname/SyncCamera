@@ -2,6 +2,7 @@ package ru.synccamera;
 
 import android.content.Context;
 import android.content.IntentFilter;
+import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
@@ -35,9 +36,9 @@ public class P2PFragment extends Fragment {
     protected boolean isDiscovering = false;
     protected Server server;
     protected Client client;
-    private WifiManager.WifiLock wifiLock;
     protected Context context;
-
+    protected String mac;
+    private WifiManager.WifiLock wifiLock;
     private WifiP2pManager.PeerListListener peerListListener = new WifiP2pManager.PeerListListener() {
         @Override
         public void onPeersAvailable(WifiP2pDeviceList peerList) {
@@ -69,7 +70,13 @@ public class P2PFragment extends Fragment {
             if (wifiP2pInfo.groupFormed && wifiP2pInfo.isGroupOwner) {
                 Log.i("SyncCamera", "Connected as a host " + groupOwnerAddress);
                 if (server == null) {
-                    server = new Server(port);
+                    server = new Server(port, new Handler(new Handler.Callback() {
+                        @Override
+                        public boolean handleMessage(@NonNull Message message) {
+                            reactOnMessage(message);
+                            return true;
+                        }
+                    }));
                 }
                 server.newConnection();
             } else {
@@ -134,6 +141,9 @@ public class P2PFragment extends Fragment {
         WifiManager wifiManager = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         wifiLock = wifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL, "SyncCamera");
         wifiLock.acquire();
+
+        WifiInfo info = wifiManager.getConnectionInfo();
+        mac = info.getMacAddress();
     }
 
     @Override

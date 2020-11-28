@@ -37,6 +37,7 @@ public class CameraFragment extends P2PFragment {
     private ImageView recordingMark;
     private File nextSavePath, prevSavePath;
     private boolean videoRecorded = false;
+    private long firstSync, timeDiff;
 
     public CameraFragment() {
 
@@ -156,7 +157,7 @@ public class CameraFragment extends P2PFragment {
         switch (theme) {
             case "STRT":
                 // получена команда на старт записи
-                long time = Long.parseLong(content);
+                long time = Long.parseLong(content) - timeDiff;
                 waitMainThread(time - System.currentTimeMillis());
                 if (preparedMediaRecorder) {
                     camera.unlock();
@@ -170,7 +171,7 @@ public class CameraFragment extends P2PFragment {
                 break;
             case "STOP":
                 // получена команда на остановку записи
-                long time2 = Long.parseLong(content);
+                long time2 = Long.parseLong(content) + timeDiff;
                 waitMainThread(time2 - System.currentTimeMillis());
                 mediaRecorder.stop();
                 camera.lock();
@@ -183,6 +184,27 @@ public class CameraFragment extends P2PFragment {
                 int dividerIndex = content.indexOf('|');
                 String email = content.substring(0, dividerIndex);
                 String password = content.substring(dividerIndex + 1);
+                /*
+                 *  TODO загрузка файла по prevSavePath
+                 */
+                break;
+            case "SYNC":
+                int divider = content.indexOf("|");
+                String p1 = content.substring(0, divider);
+                String p2 = content.substring(divider + 1);
+                if (p1.equals("0")) {
+                    // первый этап синхронизации, отправляем серверу ответное сообщение
+                    firstSync = Long.parseLong(p2);
+                    String msg = "SYNC|" + mac;
+                    client.write(msg.getBytes());
+                } else if (p1.equals(mac)) {
+                    // второй этап синхронизации, узнаем задержку
+                    long ping = (Long.parseLong(p2) - firstSync) / 2;
+                    // узнаем разницу во времени
+                    timeDiff = (System.currentTimeMillis() - ping) - firstSync;
+                    Log.d("SyncCamera", "Ping: " + ping);
+                    Log.d("SyncCamera", "Time difference: " + timeDiff);
+                }
                 break;
         }
     }
@@ -205,6 +227,7 @@ public class CameraFragment extends P2PFragment {
     }
 
     private void waitMainThread(long timeout) {
+        if (timeout < 0) return;
         synchronized (Thread.currentThread()) {
             try {
                 Thread.currentThread().wait(timeout);

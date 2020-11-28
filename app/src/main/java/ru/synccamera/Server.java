@@ -1,5 +1,6 @@
 package ru.synccamera;
 
+import android.os.Handler;
 import android.util.Log;
 
 import java.io.IOException;
@@ -12,8 +13,10 @@ public class Server {
 
     private List<SenderReceiver> senderReceiver = new ArrayList<>();
     private ServerSocket serverSocket;
+    private Handler handler;
 
-    public Server(int port) {
+    public Server(int port, Handler handler) {
+        this.handler = handler;
         ServerSocketCreator serverSocketCreator = new ServerSocketCreator(port);
         serverSocketCreator.start();
         try {
@@ -25,7 +28,7 @@ public class Server {
     }
 
     public void write(byte[] bytes) {
-        Log.d("SyncCamera", String.valueOf(senderReceiver.size()));
+        Log.d("SyncCamera", "Sending to " + senderReceiver.size() + " clients");
         for (SenderReceiver receiver : senderReceiver) {
             if (receiver != null) {
                 receiver.write(bytes);
@@ -42,7 +45,10 @@ public class Server {
             connectionEstablisher.join();
             Socket socket = connectionEstablisher.getSocket();
             if (socket != null) {
-                senderReceiver.add(new SenderReceiver(socket));
+                SenderReceiver receiver = new SenderReceiver(socket);
+                receiver.setCallback(handler);
+                receiver.start();
+                senderReceiver.add(receiver);
             }
         } catch (InterruptedException e) {
             e.printStackTrace();

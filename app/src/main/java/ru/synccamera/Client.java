@@ -23,6 +23,12 @@ public class Client extends Thread {
         this.handler = handler;
     }
 
+    public void write(byte[] bytes) {
+        if (senderReceiver != null) {
+            senderReceiver.write(bytes);
+        }
+    }
+
     @Override
     public void run() {
         try {

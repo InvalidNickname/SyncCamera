@@ -5,6 +5,7 @@ import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
+import android.os.Message;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -92,6 +93,8 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
                             }
                             updateList(items);
                             isDiscovering = false;
+                            String message = "SYNC|0|" + System.currentTimeMillis();
+                            server.write(message.getBytes());
                         }
 
                         @Override
@@ -128,6 +131,21 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
                 break;
         }
         return true;
+    }
+
+    @Override
+    protected void reactOnMessage(Message message) {
+        byte[] buffer = (byte[]) message.obj;
+        String temp = new String(buffer, 0, message.arg1);
+        Log.d("SyncCamera", "Got message " + temp + " at " + System.currentTimeMillis());
+        String theme = temp.substring(0, 4);
+        String content = temp.substring(5);
+        switch (theme) {
+            case "SYNC":
+                String msg = temp + "|" + System.currentTimeMillis();
+                server.write(msg.getBytes());
+                break;
+        }
     }
 
     @Override
