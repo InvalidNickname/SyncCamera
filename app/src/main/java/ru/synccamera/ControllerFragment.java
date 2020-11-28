@@ -180,14 +180,17 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
                         Log.d("SyncCamera", "Refused to send command without active connections");
                         Toast.makeText(getContext(), R.string.refused_to_send_command_no_active_devices, Toast.LENGTH_LONG).show();
                     } else {
+                        long executeTime = System.currentTimeMillis() + 2000;
                         if (isRecording) {
                             // посылаем команду на остановку записи
-                            server.write("STOP".getBytes());
+                            String message = "STOP|" + executeTime;
+                            server.write(message.getBytes());
                             isRecording = false;
                             recordButton.setText(R.string.start_recording);
                         } else {
                             // посылаем команду на начало записи
-                            server.write("START".getBytes());
+                            String message = "STRT|" + executeTime;
+                            server.write(message.getBytes());
                             isRecording = true;
                             currentActive = new ArrayList<>();
                             for (WifiP2pDevice device : peers) {

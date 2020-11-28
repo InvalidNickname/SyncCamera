@@ -151,8 +151,11 @@ public class CameraFragment extends P2PFragment {
         byte[] buffer = (byte[]) message.obj;
         String temp = new String(buffer, 0, message.arg1);
         Log.d("SyncCamera", "Got message " + temp + " at " + System.currentTimeMillis());
-        switch (temp) {
-            case "START":
+        String theme = temp.substring(0, 4);
+        switch (theme) {
+            case "STRT":
+                long time = Long.parseLong(temp.substring(5));
+                waitMainThread(time - System.currentTimeMillis());
                 if (preparedMediaRecorder) {
                     camera.unlock();
                     mediaRecorder.start();
@@ -164,6 +167,8 @@ public class CameraFragment extends P2PFragment {
                 }
                 break;
             case "STOP":
+                long time2 = Long.parseLong(temp.substring(5));
+                waitMainThread(time2 - System.currentTimeMillis());
                 mediaRecorder.stop();
                 camera.lock();
                 Log.d("SyncCamera", "Stopped recording video, resetting MediaRecorder");
@@ -188,6 +193,16 @@ public class CameraFragment extends P2PFragment {
             Log.d("SyncCamera", "Camera released");
         }
         releaseMediaRecorder();
+    }
+
+    private void waitMainThread(long timeout) {
+        synchronized (Thread.currentThread()) {
+            try {
+                Thread.currentThread().wait(timeout);
+            } catch (InterruptedException e) {
+                Log.d("SyncCamera", "Failed to wait");
+            }
+        }
     }
 
     private boolean prepareMediaRecorder() {
