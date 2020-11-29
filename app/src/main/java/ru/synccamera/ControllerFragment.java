@@ -38,6 +38,14 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
 
     }
 
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        if (server != null) {
+            server.close();
+        }
+    }
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {

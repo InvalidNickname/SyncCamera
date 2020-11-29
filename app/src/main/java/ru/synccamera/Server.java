@@ -63,6 +63,18 @@ public class Server {
         }
     }
 
+    public void close() {
+        if (serverSocket != null) {
+            try {
+                serverSocket.close();
+                serverSocket.setReuseAddress(true);
+                Log.d("SyncCamera", "Server socket closed");
+            } catch (IOException e) {
+                Log.d("SyncCamera", "Failed to close server socket");
+            }
+        }
+    }
+
     public int getNumberOfConnections() {
         return senderReceiver.size();
     }
