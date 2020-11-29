@@ -48,6 +48,7 @@ public class SelectorFragment extends Fragment implements View.OnClickListener {
         // конфигурация для входа в гугл аккаунт
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).requestEmail().build();
         googleSignInClient = GoogleSignIn.getClient(getActivity(), gso);
+        //googleSignInClient.signOut();
         return rootView;
     }
 

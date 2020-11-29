@@ -1,6 +1,7 @@
 package ru.synccamera;
 
 import android.content.Context;
+import android.os.AsyncTask;
 import android.util.Log;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
@@ -22,85 +23,86 @@ public class GDriveUploader {
 
     public void auth(Context context) {
         GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(context);
-        GoogleAccountCredential credential = GoogleAccountCredential.usingOAuth2(context, Collections.singleton(Scopes.DRIVE_FILE));
-        credential.setSelectedAccount(account.getAccount());
-        service = new com.google.api.services.drive.Drive.Builder(AndroidHttp.newCompatibleTransport(), new GsonFactory(), credential)
-                .setApplicationName("SyncCamera").build();
+        if (account != null) {
+            GoogleAccountCredential credential = GoogleAccountCredential.usingOAuth2(context, Collections.singleton(Scopes.DRIVE_FILE));
+            credential.setSelectedAccount(account.getAccount());
+            service = new com.google.api.services.drive.Drive.Builder(AndroidHttp.newCompatibleTransport(), new GsonFactory(), credential)
+                    .setApplicationName("SyncCamera").build();
+        }
     }
 
-    public String createFolder(String name) {
+    public void createFolder(String name, OnUploadCompleted callback) {
         Log.d("SyncCamera", "Creating folder " + name);
         if (service != null) {
-            try {
-                File file = new File();
-                file.setName(name);
-                file.setMimeType("application/vnd.google-apps.folder");
-                file.setParents(Collections.singletonList("root"));
-                Loader loader = new Loader(file);
-                loader.start();
-                loader.join();
-                return loader.getID();
-            } catch (InterruptedException e) {
-                Log.d("SyncCamera", "Failed to create folder");
-            }
+            File file = new File();
+            file.setName(name);
+            file.setMimeType("application/vnd.google-apps.folder");
+            file.setParents(Collections.singletonList("root"));
+            Loader loader = new Loader(file, callback);
+            loader.execute();
         } else {
             Log.d("SyncCamera", "Failed to create folder without logging in");
         }
-        return "";
     }
 
-    public void upload(java.io.File file, String folderId) {
+    public void upload(java.io.File file, String folderId, OnUploadCompleted callback) {
         if (service != null) {
-            try {
-                File fileMeta = new File();
-                fileMeta.setName(file.getName());
-                fileMeta.setMimeType("video/mp4");
-                fileMeta.setParents(Collections.singletonList(folderId));
-                FileContent content = new FileContent("video/mp4", file);
-                Loader loader = new Loader(fileMeta, content);
-                loader.start();
-                loader.join();
-            } catch (InterruptedException e) {
-                Log.d("SyncCamera", "Failed to upload file");
-            }
+            File fileMeta = new File();
+            fileMeta.setName(file.getName());
+            fileMeta.setMimeType("video/mp4");
+            fileMeta.setParents(Collections.singletonList(folderId));
+            FileContent content = new FileContent("video/mp4", file);
+            Loader loader = new Loader(fileMeta, content, callback);
+            loader.execute();
         } else {
             Log.d("SyncCamera", "Failed to upload file without logging in");
         }
     }
 
-    private class Loader extends Thread {
-        private final File meta;
-        private volatile String id;
-        private FileContent content;
+    interface OnUploadCompleted {
+        void onComplete(String id);
+    }
 
-        public Loader(File meta) {
+    private class Loader extends AsyncTask<Void, Void, Void> {
+        private final File meta;
+        private String id;
+        private FileContent content;
+        private OnUploadCompleted callback;
+
+        public Loader(File meta, OnUploadCompleted callback) {
             this.meta = meta;
+            this.callback = callback;
         }
 
-        public Loader(File meta, FileContent content) {
+        public Loader(File meta, FileContent content, OnUploadCompleted callback) {
             this.meta = meta;
             this.content = content;
+            this.callback = callback;
         }
 
         @Override
-        public void run() {
+        protected Void doInBackground(Void... voids) {
             try {
                 File newFile;
                 if (content == null) {
-                    Log.d("SyncCamera", "1");
                     newFile = service.files().create(meta).execute();
-                    Log.d("SyncCamera", "2");
+                    Log.d("SyncCamera", "Folder created");
                 } else {
                     newFile = service.files().create(meta, content).execute();
+                    Log.d("SyncCamera", "File created");
                 }
                 id = newFile.getId();
             } catch (IOException e) {
                 Log.d("SyncCamera", "Failed to create file/folder");
             }
+            return null;
         }
 
-        public String getID() {
-            return id;
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            if (callback != null) {
+                callback.onComplete(id);
+            }
         }
     }
 }

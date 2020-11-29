@@ -183,7 +183,7 @@ public class CameraFragment extends P2PFragment {
                 case "UPLD":
                     // получена команда на загрузку на диск
                     String id = split[1];
-                    uploader.upload(prevSavePath, id);
+                    uploader.upload(prevSavePath, id, null);
                     break;
                 case "SYNC":
                     if (split[1].equals("0")) {

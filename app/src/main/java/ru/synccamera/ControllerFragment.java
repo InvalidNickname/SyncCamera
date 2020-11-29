@@ -265,9 +265,13 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
                 } else {
                     // посылаем команду на отправку записи
                     String folderName = String.valueOf(System.currentTimeMillis());
-                    String id = uploader.createFolder(folderName);
-                    String message = "UPLD|" + id;
-                    server.write(message);
+                    uploader.createFolder(folderName, new GDriveUploader.OnUploadCompleted() {
+                        @Override
+                        public void onComplete(String id) {
+                            String message = "UPLD|" + id;
+                            server.write(message);
+                        }
+                    });
                 }
         }
     }
