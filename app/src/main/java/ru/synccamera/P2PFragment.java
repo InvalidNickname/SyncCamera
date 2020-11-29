@@ -61,6 +61,7 @@ public class P2PFragment extends Fragment {
     protected Client client;
     protected Context context;
     protected String mac;
+    protected GDriveUploader uploader;
     private WifiManager.WifiLock wifiLock;
     private boolean firstCall = true;
     private final WifiP2pManager.ConnectionInfoListener connectionInfoListener = new WifiP2pManager.ConnectionInfoListener() {
@@ -130,6 +131,12 @@ public class P2PFragment extends Fragment {
         return "02:00:00:00:00:00";
     }
 
+    private void setupGoogleDriveUploader() {
+        uploader = new GDriveUploader();
+        uploader.auth(getActivity().getApplicationContext());
+        Log.d("SyncCamera", "Successfully authorized in Google");
+    }
+
     protected void reactOnMessage(Message message) {
 
     }
@@ -164,6 +171,7 @@ public class P2PFragment extends Fragment {
         manager = (WifiP2pManager) context.getSystemService(Context.WIFI_P2P_SERVICE);
         channel = manager.initialize(context, getMainLooper(), null);
         cancelConnections();
+        setupGoogleDriveUploader();
     }
 
     @Override

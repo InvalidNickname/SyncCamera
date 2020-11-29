@@ -30,7 +30,8 @@ public class MainActivity extends AppCompatActivity {
                 .commit();
         String[] permissions = new String[]{
                 "android.permission.ACCESS_FINE_LOCATION", "android.permission.CAMERA",
-                "android.permission.WRITE_EXTERNAL_STORAGE", "android.permission.RECORD_AUDIO"};
+                "android.permission.WRITE_EXTERNAL_STORAGE", "android.permission.RECORD_AUDIO",
+                "android.permission.READ_EXTERNAL_STORAGE"};
         if (!hasPermissions(this, permissions)) {
             requestPermissions(permissions, 1);
         }

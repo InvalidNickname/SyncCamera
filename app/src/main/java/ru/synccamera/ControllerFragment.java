@@ -264,7 +264,9 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
                     Toast.makeText(getContext(), R.string.refused_to_send_upload_command_no_videos, Toast.LENGTH_LONG).show();
                 } else {
                     // посылаем команду на отправку записи
-                    String message = "UPLD|" + System.currentTimeMillis();
+                    String folderName = String.valueOf(System.currentTimeMillis());
+                    String id = uploader.createFolder(folderName);
+                    String message = "UPLD|" + id;
                     server.write(message);
                 }
         }

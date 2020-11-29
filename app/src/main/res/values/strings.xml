@@ -25,4 +25,6 @@
     <string name="refused_to_send_upload_command_no_email">Укажите логин от Google аккаунта в настройках</string>
     <string name="refused_to_send_upload_command_no_pass">Укажите пароль от Google аккаунта в настройках</string>
     <string name="server_not_started">Сервер не запущен - нет активных подключений</string>
+    <string name="sign_in">Войти в Google аккаунт</string>
+    <string name="already_signed_in">Вход в аккаунт уже осуществлён</string>
 </resources>

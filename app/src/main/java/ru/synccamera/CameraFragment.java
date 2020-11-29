@@ -181,10 +181,9 @@ public class CameraFragment extends P2PFragment {
                     recordingMark.setVisibility(View.INVISIBLE);
                     break;
                 case "UPLD":
-                    // получена команда на загрузку на диск\
-                    /*
-                     *  TODO загрузка файла по prevSavePath
-                     */
+                    // получена команда на загрузку на диск
+                    String id = split[1];
+                    uploader.upload(prevSavePath, id);
                     break;
                 case "SYNC":
                     if (split[1].equals("0")) {
@@ -234,7 +233,7 @@ public class CameraFragment extends P2PFragment {
     }
 
     private boolean prepareMediaRecorder() {
-        if (mediaRecorder==null) {
+        if (mediaRecorder == null) {
             mediaRecorder = new MediaRecorder();
         } else {
             mediaRecorder.reset();

@@ -26,9 +26,6 @@ public class Server {
         try {
             serverSocketCreator.join();
             serverSocket = serverSocketCreator.getServerSocket();
-            if (serverSocket == null) {
-                createServerSocket(port);
-            }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -58,6 +55,8 @@ public class Server {
                 receiver.setCallback(handler);
                 receiver.start();
                 senderReceiver.add(receiver);
+            } else {
+                newConnection();
             }
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -97,7 +96,6 @@ public class Server {
 
         private final ServerSocket serverSocket;
         private volatile Socket socket;
-        private boolean failed = false;
 
         public ConnectionEstablisher(ServerSocket serverSocket) {
             this.serverSocket = serverSocket;
@@ -113,17 +111,13 @@ public class Server {
                 socket = serverSocket.accept();
                 Log.d("SyncCamera", "Server socket opened");
             } catch (IOException e) {
-                failed = true;
+                socket = null;
                 Log.d("SyncCamera", "Failed to open server socket");
             }
         }
 
         public Socket getSocket() {
-            if (failed) {
-                return null;
-            } else {
-                return socket;
-            }
+            return socket;
         }
 
     }
