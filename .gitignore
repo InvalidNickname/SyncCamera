@@ -81,3 +81,6 @@ lint/generated/
 lint/outputs/
 lint/tmp/
 # lint/reports/
+/app/release/output-metadata.json
+/app/src/main/res/debug_credentials.json
+/app/src/main/res/release_credentials.json
