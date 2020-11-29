@@ -2,9 +2,9 @@ package ru.synccamera;
 
 public class PeerListItem {
 
-    private String name;
+    private final String name;
     private int status;
-    private String address;
+    private final String address;
 
     PeerListItem(String name, int status, String address) {
         this.name = name;

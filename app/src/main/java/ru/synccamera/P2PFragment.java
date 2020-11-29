@@ -31,18 +31,7 @@ public class P2PFragment extends Fragment {
 
     protected final IntentFilter intentFilter = new IntentFilter();
     protected List<WifiP2pDevice> peers = new ArrayList<>();
-    protected WifiP2pManager.Channel channel;
-    protected WifiP2pManager manager;
-    protected PeerBroadcastReceiver receiver;
-    protected boolean isDiscovering = false;
-    protected Server server;
-    protected Client client;
-    protected Context context;
-    protected String mac;
-    private WifiManager.WifiLock wifiLock;
-    private boolean firstCall = true;
-
-    private WifiP2pManager.PeerListListener peerListListener = new WifiP2pManager.PeerListListener() {
+    private final WifiP2pManager.PeerListListener peerListListener = new WifiP2pManager.PeerListListener() {
         @Override
         public void onPeersAvailable(WifiP2pDeviceList peerList) {
             Collection<WifiP2pDevice> refreshedPeers = peerList.getDeviceList();
@@ -64,8 +53,17 @@ public class P2PFragment extends Fragment {
             }
         }
     };
-
-    private WifiP2pManager.ConnectionInfoListener connectionInfoListener = new WifiP2pManager.ConnectionInfoListener() {
+    protected WifiP2pManager.Channel channel;
+    protected WifiP2pManager manager;
+    protected PeerBroadcastReceiver receiver;
+    protected boolean isDiscovering = false;
+    protected Server server;
+    protected Client client;
+    protected Context context;
+    protected String mac;
+    private WifiManager.WifiLock wifiLock;
+    private boolean firstCall = true;
+    private final WifiP2pManager.ConnectionInfoListener connectionInfoListener = new WifiP2pManager.ConnectionInfoListener() {
         @Override
         public void onConnectionInfoAvailable(WifiP2pInfo wifiP2pInfo) {
             final InetAddress groupOwnerAddress = wifiP2pInfo.groupOwnerAddress;
@@ -165,6 +163,7 @@ public class P2PFragment extends Fragment {
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
         manager = (WifiP2pManager) context.getSystemService(Context.WIFI_P2P_SERVICE);
         channel = manager.initialize(context, getMainLooper(), null);
+        cancelConnections();
     }
 
     @Override
@@ -183,6 +182,13 @@ public class P2PFragment extends Fragment {
     @Override
     public void onDetach() {
         super.onDetach();
+        cancelConnections();
+        if (wifiLock.isHeld()) {
+            wifiLock.release();
+        }
+    }
+
+    protected void cancelConnections() {
         try {
             manager.requestGroupInfo(channel, new WifiP2pManager.GroupInfoListener() {
                 @Override
@@ -205,9 +211,6 @@ public class P2PFragment extends Fragment {
             });
         } catch (SecurityException e) {
             Log.d("SyncCamera", "Failed to cancel connections");
-        }
-        if (wifiLock.isHeld()) {
-            wifiLock.release();
         }
     }
 

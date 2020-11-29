@@ -1,6 +1,5 @@
 package ru.synccamera;
 
-import android.content.SharedPreferences;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pManager;
@@ -20,7 +19,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -124,14 +122,6 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
                     });
                 }
                 break;
-            case R.id.settings:
-                Log.d("SyncCamera", "Opening settings");
-                getActivity().getSupportFragmentManager().beginTransaction()
-                        .setReorderingAllowed(true)
-                        .replace(R.id.fragment_main, SettingsFragment.class, null)
-                        .addToBackStack(null)
-                        .commit();
-                break;
         }
         return true;
     }
@@ -143,9 +133,8 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
         String[] messages = st.split(";");
         for (String temp : messages) {
             Log.d("SyncCamera", "Got message " + temp + " at " + System.currentTimeMillis());
-            String theme = temp.substring(0, 4);
-            String content = temp.substring(5);
-            switch (theme) {
+            String[] split = temp.split("\\|");
+            switch (split[0]) {
                 case "SYNC":
                     String msg = temp + "|" + System.currentTimeMillis();
                     server.write(msg);
@@ -239,7 +228,7 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
                         Log.d("SyncCamera", "Refused to send command without active connections");
                         Toast.makeText(getContext(), R.string.refused_to_send_command_no_active_devices, Toast.LENGTH_LONG).show();
                     } else {
-                        long executeTime = System.currentTimeMillis() + 2000;
+                        long executeTime = System.currentTimeMillis() + 500;
                         if (isRecording) {
                             // посылаем команду на остановку записи
                             String message = "STOP|" + executeTime;
@@ -275,22 +264,8 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
                     Toast.makeText(getContext(), R.string.refused_to_send_upload_command_no_videos, Toast.LENGTH_LONG).show();
                 } else {
                     // посылаем команду на отправку записи
-                    SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
-                    String from = preferences.getString("from", "");
-                    String pass = preferences.getString("pass", "");
-                    if (from.equals("") && pass.equals("")) {
-                        Log.d("SyncCamera", "Refused to send upload command - no e-mail and password");
-                        Toast.makeText(getContext(), R.string.refused_to_send_upload_command_no_email_and_pass, Toast.LENGTH_LONG).show();
-                    } else if (from.equals("")) {
-                        Log.d("SyncCamera", "Refused to send upload command - no e-mail");
-                        Toast.makeText(getContext(), R.string.refused_to_send_upload_command_no_email, Toast.LENGTH_LONG).show();
-                    } else if (pass.equals("")) {
-                        Log.d("SyncCamera", "Refused to send upload command - no password");
-                        Toast.makeText(getContext(), R.string.refused_to_send_upload_command_no_pass, Toast.LENGTH_LONG).show();
-                    } else {
-                        String message = "UPLD|" + from + "|" + pass;
-                        server.write(message);
-                    }
+                    String message = "UPLD|" + System.currentTimeMillis();
+                    server.write(message);
                 }
         }
     }

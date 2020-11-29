@@ -11,17 +11,24 @@ import java.util.List;
 
 public class Server {
 
+    private final Handler handler;
     private List<SenderReceiver> senderReceiver = new ArrayList<>();
     private ServerSocket serverSocket;
-    private Handler handler;
 
     public Server(int port, Handler handler) {
         this.handler = handler;
+        createServerSocket(port);
+    }
+
+    private void createServerSocket(int port) {
         ServerSocketCreator serverSocketCreator = new ServerSocketCreator(port);
         serverSocketCreator.start();
         try {
             serverSocketCreator.join();
             serverSocket = serverSocketCreator.getServerSocket();
+            if (serverSocket == null) {
+                createServerSocket(port);
+            }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -63,7 +70,7 @@ public class Server {
 
     static class ServerSocketCreator extends Thread {
 
-        private int port;
+        private final int port;
         private volatile ServerSocket serverSocket;
 
         public ServerSocketCreator(int port) {
@@ -88,8 +95,9 @@ public class Server {
 
     static class ConnectionEstablisher extends Thread {
 
+        private final ServerSocket serverSocket;
         private volatile Socket socket;
-        private ServerSocket serverSocket;
+        private boolean failed = false;
 
         public ConnectionEstablisher(ServerSocket serverSocket) {
             this.serverSocket = serverSocket;
@@ -105,12 +113,17 @@ public class Server {
                 socket = serverSocket.accept();
                 Log.d("SyncCamera", "Server socket opened");
             } catch (IOException e) {
+                failed = true;
                 Log.d("SyncCamera", "Failed to open server socket");
             }
         }
 
         public Socket getSocket() {
-            return socket;
+            if (failed) {
+                return null;
+            } else {
+                return socket;
+            }
         }
 
     }

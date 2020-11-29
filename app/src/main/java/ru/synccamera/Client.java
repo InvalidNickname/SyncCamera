@@ -10,11 +10,11 @@ import java.net.Socket;
 
 public class Client extends Thread {
 
-    Socket socket;
-    InetAddress hostAddress;
+    final Socket socket;
+    final InetAddress hostAddress;
     SenderReceiver senderReceiver;
-    Handler handler;
-    private int port;
+    final Handler handler;
+    private final int port;
 
     public Client(int port, InetAddress hostAddress, Handler handler) {
         this.port = port;

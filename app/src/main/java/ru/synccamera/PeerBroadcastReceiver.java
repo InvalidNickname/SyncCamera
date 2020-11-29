@@ -12,10 +12,10 @@ import androidx.appcompat.app.AppCompatActivity;
 public class PeerBroadcastReceiver extends BroadcastReceiver {
 
     private AppCompatActivity activity;
-    private WifiP2pManager manager;
-    private WifiP2pManager.PeerListListener listener;
-    private WifiP2pManager.Channel channel;
-    private WifiP2pManager.ConnectionInfoListener connectionInfoListener;
+    private final WifiP2pManager manager;
+    private final WifiP2pManager.PeerListListener listener;
+    private final WifiP2pManager.Channel channel;
+    private final WifiP2pManager.ConnectionInfoListener connectionInfoListener;
 
     public PeerBroadcastReceiver(AppCompatActivity activity, WifiP2pManager.PeerListListener listener, WifiP2pManager manager, WifiP2pManager.Channel channel, WifiP2pManager.ConnectionInfoListener connectionInfoListener) {
         this.activity = activity;

@@ -9,11 +9,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.net.SocketAddress;
 
 public class SenderReceiver extends Thread {
 
-    private Socket socket;
+    private final Socket socket;
     private InputStream inputStream;
     private OutputStream outputStream;
 
@@ -27,10 +26,6 @@ public class SenderReceiver extends Thread {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    public SocketAddress getIP() {
-        return socket.getLocalSocketAddress();
     }
 
     @Override
@@ -66,8 +61,8 @@ public class SenderReceiver extends Thread {
     @SuppressWarnings("deprecation")
     static class AsyncWriter extends AsyncTask<Void, Void, Void> {
 
-        private byte[] bytes;
-        private OutputStream stream;
+        private final byte[] bytes;
+        private final OutputStream stream;
 
         public AsyncWriter(byte[] bytes, OutputStream stream) {
             this.bytes = bytes;

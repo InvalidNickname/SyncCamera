@@ -154,12 +154,11 @@ public class CameraFragment extends P2PFragment {
         String[] messages = st.split(";");
         for (String temp : messages) {
             Log.d("SyncCamera", "Got message " + temp + " at " + System.currentTimeMillis());
-            String theme = temp.substring(0, 4);
-            String content = temp.substring(5);
-            switch (theme) {
+            String[] split = temp.split("\\|");
+            switch (split[0]) {
                 case "STRT":
                     // получена команда на старт записи
-                    long time = Long.parseLong(content) + timeDiff;
+                    long time = Long.parseLong(split[1]) + timeDiff;
                     waitMainThread(time - System.currentTimeMillis());
                     if (preparedMediaRecorder) {
                         camera.unlock();
@@ -173,7 +172,7 @@ public class CameraFragment extends P2PFragment {
                     break;
                 case "STOP":
                     // получена команда на остановку записи
-                    long time2 = Long.parseLong(content) + timeDiff;
+                    long time2 = Long.parseLong(split[1]) + timeDiff;
                     waitMainThread(time2 - System.currentTimeMillis());
                     mediaRecorder.stop();
                     camera.lock();
@@ -182,26 +181,20 @@ public class CameraFragment extends P2PFragment {
                     recordingMark.setVisibility(View.INVISIBLE);
                     break;
                 case "UPLD":
-                    // получена команда на загрузку на диск
-                    int dividerIndex = content.indexOf('|');
-                    String email = content.substring(0, dividerIndex);
-                    String password = content.substring(dividerIndex + 1);
+                    // получена команда на загрузку на диск\
                     /*
                      *  TODO загрузка файла по prevSavePath
                      */
                     break;
                 case "SYNC":
-                    int divider = content.indexOf("|");
-                    String p1 = content.substring(0, divider);
-                    String p2 = content.substring(divider + 1);
-                    if (p1.equals("0")) {
+                    if (split[1].equals("0")) {
                         // первый этап синхронизации, отправляем серверу ответное сообщение
-                        firstSync = Long.parseLong(p2);
+                        firstSync = Long.parseLong(split[2]);
                         String msg = "SYNC|" + mac;
                         client.write(msg);
-                    } else if (p1.substring(3).equals(mac.substring(3))) {
+                    } else if (split[1].substring(3).equals(mac.substring(3))) {
                         // второй этап синхронизации, узнаем задержку
-                        long ping = (Long.parseLong(p2) - firstSync) / 2;
+                        long ping = (Long.parseLong(split[2]) - firstSync) / 2;
                         // узнаем разницу во времени
                         timeDiff = (System.currentTimeMillis() - ping) - firstSync;
                         Log.d("SyncCamera", "Ping: " + ping);
@@ -241,7 +234,11 @@ public class CameraFragment extends P2PFragment {
     }
 
     private boolean prepareMediaRecorder() {
-        mediaRecorder = new MediaRecorder();
+        if (mediaRecorder==null) {
+            mediaRecorder = new MediaRecorder();
+        } else {
+            mediaRecorder.reset();
+        }
         mediaRecorder.setCamera(camera);
         mediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
         mediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
