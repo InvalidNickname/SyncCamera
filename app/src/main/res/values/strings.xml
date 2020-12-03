@@ -27,4 +27,6 @@
     <string name="server_not_started">Сервер не запущен - нет активных подключений</string>
     <string name="sign_in">Войти в Google аккаунт</string>
     <string name="already_signed_in">Вход в аккаунт уже осуществлён</string>
+    <string name="start_sync">Начать синхронизацию</string>
+    <string name="stop_discovery_before_sync">Перед синхронизацией остановите обнаружение</string>
 </resources>

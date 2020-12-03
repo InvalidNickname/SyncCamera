@@ -86,15 +86,17 @@ public class P2PFragment extends Fragment {
                     server.newConnection();
                 }
             } else {
-                Log.i("SyncCamera", "Connected to " + groupOwnerAddress + " as a client");
-                client = new Client(port, groupOwnerAddress, new Handler(new Handler.Callback() {
-                    @Override
-                    public boolean handleMessage(@NonNull Message message) {
-                        reactOnMessage(message);
-                        return true;
-                    }
-                }));
-                client.start();
+                if (groupOwnerAddress != null) {
+                    Log.i("SyncCamera", "Connected to " + groupOwnerAddress + " as a client");
+                    client = new Client(port, groupOwnerAddress, new Handler(new Handler.Callback() {
+                        @Override
+                        public boolean handleMessage(@NonNull Message message) {
+                            reactOnMessage(message);
+                            return true;
+                        }
+                    }));
+                    client.start();
+                }
             }
         }
     };

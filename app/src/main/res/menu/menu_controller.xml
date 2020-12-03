@@ -2,6 +2,12 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
+        android:id="@+id/sync"
+        android:icon="@drawable/ic_sync"
+        android:title="@string/start_sync"
+        android:visible="true"
+        app:showAsAction="ifRoom" />
+    <item
         android:id="@+id/toggle_discovery"
         android:icon="@drawable/ic_refresh"
         android:title="@string/begin_search"
