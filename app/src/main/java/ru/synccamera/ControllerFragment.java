@@ -23,6 +23,8 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -146,6 +148,25 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        try {
+            Method m = manager.getClass().getMethod("setDeviceName", channel.getClass(), String.class, WifiP2pManager.ActionListener.class);
+            m.invoke(manager, channel, "CONTROLLER", new WifiP2pManager.ActionListener() {
+
+                @Override
+                public void onSuccess() {
+                    Log.d("ControllerFragment", "Device name changed to CONTROLLER");
+                }
+
+                @Override
+                public void onFailure(int reason) {
+                    Log.d("ControllerFragment", "Can't change device name");
+                }
+            });
+        } catch (NoSuchMethodException e) {
+            Log.d("ControllerFragment", "Can't change device name - NoSuchMethod");
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            Log.d("ControllerFragment", "Can't change device name");
+        }
         createGroup();
     }
 
@@ -233,7 +254,6 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
             try {
                 final WifiP2pConfig config = new WifiP2pConfig();
                 config.deviceAddress = address;
-                config.groupOwnerIntent = 15;
                 connect(manager, channel, config);
             } catch (SecurityException e) {
                 e.printStackTrace();

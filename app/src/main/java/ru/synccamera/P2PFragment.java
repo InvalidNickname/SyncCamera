@@ -70,7 +70,7 @@ public class P2PFragment extends Fragment {
             final InetAddress groupOwnerAddress = wifiP2pInfo.groupOwnerAddress;
             final int port = context.getResources().getInteger(R.integer.port);
             if (wifiP2pInfo.groupFormed && wifiP2pInfo.isGroupOwner) {
-                Log.i("SyncCamera", "Connected as a host " + groupOwnerAddress);
+                Log.i("P2PFragment", "Connected as a host " + groupOwnerAddress);
                 if (firstCall) {
                     firstCall = false;
                 } else {
@@ -87,7 +87,7 @@ public class P2PFragment extends Fragment {
                 }
             } else {
                 if (groupOwnerAddress != null) {
-                    Log.i("SyncCamera", "Connected to " + groupOwnerAddress + " as a client");
+                    Log.i("P2PFragment", "Connected to " + groupOwnerAddress + " as a client");
                     client = new Client(port, groupOwnerAddress, new Handler(new Handler.Callback() {
                         @Override
                         public boolean handleMessage(@NonNull Message message) {
@@ -124,11 +124,11 @@ public class P2PFragment extends Fragment {
                 if (res1.length() > 0) {
                     res1.deleteCharAt(res1.length() - 1);
                 }
-                Log.d("SyncCamera", "MAC: " + res1.toString());
+                Log.d("P2PFragment", "MAC: " + res1.toString());
                 return res1.toString();
             }
         } catch (Exception ex) {
-            Log.d("SyncCamera", "Can't get MAC");
+            Log.d("P2PFragment", "Can't get MAC");
         }
         return "02:00:00:00:00:00";
     }
@@ -136,7 +136,7 @@ public class P2PFragment extends Fragment {
     private void setupGoogleDriveUploader() {
         uploader = new GDriveUploader();
         uploader.auth(getActivity().getApplicationContext());
-        Log.d("SyncCamera", "Successfully authorized in Google");
+        Log.d("P2PFragment", "Successfully authorized in Google");
     }
 
     protected void reactOnMessage(Message message) {
@@ -208,19 +208,19 @@ public class P2PFragment extends Fragment {
 
                             @Override
                             public void onSuccess() {
-                                Log.d("SyncCamera", "Cancelling connections");
+                                Log.d("P2PFragment", "Cancelling connections");
                             }
 
                             @Override
                             public void onFailure(int reason) {
-                                Log.d("SyncCamera", "Failed to cancel connections");
+                                Log.d("P2PFragment", "Failed to cancel connections");
                             }
                         });
                     }
                 }
             });
         } catch (SecurityException e) {
-            Log.d("SyncCamera", "Failed to cancel connections");
+            Log.d("P2PFragment", "Failed to cancel connections");
         }
     }
 

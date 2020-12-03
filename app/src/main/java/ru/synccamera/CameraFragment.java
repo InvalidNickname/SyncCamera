@@ -4,6 +4,8 @@ import android.content.Context;
 import android.hardware.Camera;
 import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
+import android.net.wifi.p2p.WifiP2pConfig;
+import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
 import android.os.Environment;
@@ -38,6 +40,7 @@ public class CameraFragment extends P2PFragment {
     private File nextSavePath, prevSavePath;
     private boolean videoRecorded = false;
     private long firstSync, timeDiff;
+    private Menu menu;
 
     public CameraFragment() {
 
@@ -46,10 +49,10 @@ public class CameraFragment extends P2PFragment {
     private static Camera getCameraInstance() {
         Camera c = null;
         try {
-            Log.d("SyncCamera", "Opening camera");
+            Log.d("CameraFragment", "Opening camera");
             c = Camera.open();
         } catch (Exception e) {
-            Log.d("SyncCamera", "Failed to open camera");
+            Log.d("CameraFragment", "Failed to open camera");
         }
         return c;
     }
@@ -58,7 +61,7 @@ public class CameraFragment extends P2PFragment {
         File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), "SyncCamera");
         if (!mediaStorageDir.exists()) {
             if (!mediaStorageDir.mkdirs()) {
-                Log.d("SyncCamera", "Failed to create save directory");
+                Log.d("CameraFragment", "Failed to create save directory");
                 return null;
             }
         }
@@ -82,7 +85,7 @@ public class CameraFragment extends P2PFragment {
         cameraPreview = new CameraPreview(getContext(), camera, new SurfaceHolder.Callback() {
             @Override
             public void surfaceCreated(@NonNull SurfaceHolder surfaceHolder) {
-                Log.d("SyncCamera", "Surface created, preparing MediaRecorder");
+                Log.d("CameraFragment", "Surface created, preparing MediaRecorder");
                 preparedMediaRecorder = prepareMediaRecorder();
             }
 
@@ -104,6 +107,7 @@ public class CameraFragment extends P2PFragment {
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
         inflater.inflate(R.menu.menu_camera, menu);
+        this.menu = menu;
         super.onCreateOptionsMenu(menu, inflater);
     }
 
@@ -117,13 +121,13 @@ public class CameraFragment extends P2PFragment {
 
                         @Override
                         public void onSuccess() {
-                            Log.d("SyncCamera", "Stopped discovery");
+                            Log.d("CameraFragment", "Stopped discovery");
                             isDiscovering = false;
                         }
 
                         @Override
                         public void onFailure(int reasonCode) {
-                            Log.d("SyncCamera", "Failed to stop discovery");
+                            Log.d("CameraFragment", "Failed to stop discovery");
                         }
                     });
                 } else {
@@ -132,19 +136,54 @@ public class CameraFragment extends P2PFragment {
 
                         @Override
                         public void onSuccess() {
-                            Log.d("SyncCamera", "Started discovery");
+                            Log.d("CameraFragment", "Started discovery");
                             isDiscovering = true;
                         }
 
                         @Override
                         public void onFailure(int reasonCode) {
-                            Log.d("SyncCamera", "Failed to start discovery");
+                            Log.d("CameraFragment", "Failed to start discovery");
                         }
                     });
                 }
                 break;
+            case R.id.connect:
+                for (WifiP2pDevice device: peers) {
+                    if (device.deviceName.contains("CONTROLLER")) {
+                        connectToPeer(device.deviceAddress);
+                        break;
+                    }
+                }
+                break;
         }
         return true;
+    }
+
+    private void connect(WifiP2pManager manager, WifiP2pManager.Channel channel, WifiP2pConfig config) throws SecurityException {
+        final String address = config.deviceAddress;
+        manager.connect(channel, config, new WifiP2pManager.ActionListener() {
+
+            @Override
+            public void onSuccess() {
+                Log.d("CameraFragment", "Connected to " + address);
+                menu.findItem(R.id.connect).setIcon(R.drawable.ic_check);
+            }
+
+            @Override
+            public void onFailure(int reason) {
+                Log.d("CameraFragment", "Failed to connect to " + address);
+            }
+        });
+    }
+
+    public void connectToPeer(final String address) {
+        try {
+            final WifiP2pConfig config = new WifiP2pConfig();
+            config.deviceAddress = address;
+            connect(manager, channel, config);
+        } catch (SecurityException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -153,7 +192,7 @@ public class CameraFragment extends P2PFragment {
         String st = new String(buffer, 0, message.arg1);
         String[] messages = st.split(";");
         for (String temp : messages) {
-            Log.d("SyncCamera", "Got message " + temp + " at " + System.currentTimeMillis());
+            Log.d("CameraFragment", "Got message " + temp + " at " + System.currentTimeMillis());
             String[] split = temp.split("\\|");
             switch (split[0]) {
                 case "STRT":
@@ -163,11 +202,11 @@ public class CameraFragment extends P2PFragment {
                     if (preparedMediaRecorder) {
                         camera.unlock();
                         mediaRecorder.start();
-                        Log.d("SyncCamera", "Recording video, started at " + System.currentTimeMillis());
+                        Log.d("CameraFragment", "Recording video, started at " + System.currentTimeMillis());
                         recordingMark.setVisibility(View.VISIBLE);
                         videoRecorded = true;
                     } else {
-                        Log.d("SyncCamera", "MediaRecorder isn't ready, can't start");
+                        Log.d("CameraFragment", "MediaRecorder isn't ready, can't start");
                     }
                     break;
                 case "STOP":
@@ -176,7 +215,7 @@ public class CameraFragment extends P2PFragment {
                     waitMainThread(time2 - System.currentTimeMillis());
                     mediaRecorder.stop();
                     camera.lock();
-                    Log.d("SyncCamera", "Stopped recording video, resetting MediaRecorder");
+                    Log.d("CameraFragment", "Stopped recording video, resetting MediaRecorder");
                     preparedMediaRecorder = prepareMediaRecorder();
                     recordingMark.setVisibility(View.INVISIBLE);
                     break;
@@ -196,8 +235,8 @@ public class CameraFragment extends P2PFragment {
                         long ping = (Long.parseLong(split[2]) - firstSync) / 2;
                         // узнаем разницу во времени
                         timeDiff = (System.currentTimeMillis() - ping) - firstSync;
-                        Log.d("SyncCamera", "Ping: " + ping);
-                        Log.d("SyncCamera", "Time difference: " + timeDiff);
+                        Log.d("CameraFragment", "Ping: " + ping);
+                        Log.d("CameraFragment", "Time difference: " + timeDiff);
                     }
                     break;
             }
@@ -216,7 +255,7 @@ public class CameraFragment extends P2PFragment {
         if (camera != null) {
             camera.release();
             camera = null;
-            Log.d("SyncCamera", "Camera released");
+            Log.d("CameraFragment", "Camera released");
         }
         releaseMediaRecorder();
     }
@@ -227,7 +266,7 @@ public class CameraFragment extends P2PFragment {
             try {
                 Thread.currentThread().wait(timeout);
             } catch (InterruptedException e) {
-                Log.d("SyncCamera", "Failed to wait");
+                Log.d("CameraFragment", "Failed to wait");
             }
         }
     }
@@ -248,23 +287,23 @@ public class CameraFragment extends P2PFragment {
             releaseMediaRecorder();
             return false;
         }
-        Log.d("SyncCamera", "New file will be saved at: " + nextSavePath.toString());
+        Log.d("CameraFragment", "New file will be saved at: " + nextSavePath.toString());
         mediaRecorder.setOutputFile(nextSavePath.toString());
         mediaRecorder.setPreviewDisplay(cameraPreview.getHolder().getSurface());
         Camera.Size maxSize = camera.getParameters().getSupportedPreviewSizes().get(0);
-        Log.d("SyncCamera", "Max video size is " + maxSize.height + "*" + maxSize.width);
+        Log.d("CameraFragment", "Max video size is " + maxSize.height + "*" + maxSize.width);
         try {
             mediaRecorder.prepare();
         } catch (IllegalStateException e) {
-            Log.d("SyncCamera", "IllegalStateException preparing MediaRecorder");
+            Log.d("CameraFragment", "IllegalStateException preparing MediaRecorder");
             releaseMediaRecorder();
             return false;
         } catch (IOException e) {
-            Log.d("SyncCamera", "IOException preparing MediaRecorder");
+            Log.d("CameraFragment", "IOException preparing MediaRecorder");
             releaseMediaRecorder();
             return false;
         }
-        Log.d("SyncCamera", "MediaRecorder prepared");
+        Log.d("CameraFragment", "MediaRecorder prepared");
         videoRecorded = false;
         return true;
     }
@@ -272,9 +311,9 @@ public class CameraFragment extends P2PFragment {
     private void releaseMediaRecorder() {
         if (nextSavePath != null && !videoRecorded) {
             if (nextSavePath.delete()) {
-                Log.d("SyncCamera", "Video wasn't recorded, deleted temp file");
+                Log.d("CameraFragment", "Video wasn't recorded, deleted temp file");
             } else {
-                Log.d("SyncCamera", "Video wasn't recorded, failed to delete temp file");
+                Log.d("CameraFragment", "Video wasn't recorded, failed to delete temp file");
             }
         }
         videoRecorded = false;
@@ -282,7 +321,7 @@ public class CameraFragment extends P2PFragment {
             mediaRecorder.reset();
             mediaRecorder.release();
             mediaRecorder = null;
-            Log.d("SyncCamera", "MediaRecorder released");
+            Log.d("CameraFragment", "MediaRecorder released");
         }
     }
 
