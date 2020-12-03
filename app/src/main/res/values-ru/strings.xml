@@ -1,0 +1,30 @@
+<resources>
+    <string name="app_name">SyncCamera</string>
+    <string name="set_controller">Это управляющий телефон</string>
+    <string name="set_camera">Это камера</string>
+    <string name="peer_search">Поиск устройств в сети</string>
+    <string name="device_connected">✓</string>
+    <string name="device_invite">запрос</string>
+    <string name="device_error">ОШИБКА</string>
+    <string name="device_available">+</string>
+    <string name="start_recording">Начать запись</string>
+    <string name="begin_search">Начать поиск</string>
+    <string name="stop_search">Остановить поиск</string>
+    <string name="device_connection_lost_while_recording">ОШИБКА</string>
+    <string name="stop_recording">Остановить запись</string>
+    <string name="refused_to_send_command_while_discovering">Перед отправкой команды остановите поиск устройств</string>
+    <string name="refused_to_send_command_no_active_devices">Нет подключенных устройств</string>
+    <string name="pref_version">Версия %s</string>
+    <string name="open_settings">Открыть настройки</string>
+    <string name="send_from">E-mail отправителя (Google аккаунт)</string>
+    <string name="from_password">Пароль отправителя (Google аккаунт)</string>
+    <string name="send_command_upload">Загрузить на диск</string>
+    <string name="refused_to_send_upload_command_while_recording">Перед отправкой закончите запись видео</string>
+    <string name="refused_to_send_upload_command_no_videos">Видео ещё не было записано</string>
+    <string name="server_not_started">Сервер не запущен - нет активных подключений</string>
+    <string name="sign_in">Войти в Google аккаунт</string>
+    <string name="already_signed_in">Вход в аккаунт уже осуществлён</string>
+    <string name="start_sync">Начать синхронизацию</string>
+    <string name="stop_discovery_before_sync">Перед синхронизацией остановите обнаружение</string>
+    <string name="connect_to_controller">Подключиться к контроллеру</string>
+</resources>

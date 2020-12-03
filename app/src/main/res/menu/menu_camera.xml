@@ -12,6 +12,6 @@
         android:id="@+id/connect"
         android:icon="@drawable/ic_connect"
         android:title="@string/connect_to_controller"
-        android:visible="true"
+        android:visible="false"
         app:showAsAction="ifRoom" />
 </menu>

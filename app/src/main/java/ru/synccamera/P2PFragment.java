@@ -61,6 +61,7 @@ public class P2PFragment extends Fragment {
     protected Client client;
     protected Context context;
     protected String mac;
+    protected String deviceName;
     protected GDriveUploader uploader;
     private WifiManager.WifiLock wifiLock;
     private boolean firstCall = true;

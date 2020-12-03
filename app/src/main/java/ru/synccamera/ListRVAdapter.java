@@ -47,12 +47,6 @@ public class ListRVAdapter extends RecyclerView.Adapter<ListRVAdapter.CardViewHo
                 break;
         }
         cardViewHolder.mac.setText(peers.get(i).getAddress());
-        cardViewHolder.main.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                fragment.connectToPeer(peers.get(i).getAddress());
-            }
-        });
     }
 
     private String statusToString(Context context, int status) {

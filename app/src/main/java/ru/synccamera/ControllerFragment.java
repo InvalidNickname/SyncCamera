@@ -1,9 +1,9 @@
 package ru.synccamera;
 
-import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pGroup;
 import android.net.wifi.p2p.WifiP2pManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Message;
 import android.util.Log;
@@ -35,7 +35,6 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
     private boolean wasRecording = false;
     private List<PeerListItem> currentActive = new ArrayList<>();
     private Button recordButton, sendButton;
-    private boolean groupCreated = false;
 
     public ControllerFragment() {
 
@@ -145,16 +144,16 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
         return true;
     }
 
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    protected void setDeviceName() {
+        deviceName = Build.MODEL;
         try {
+            deviceName += "-CONTROLLER";
             Method m = manager.getClass().getMethod("setDeviceName", channel.getClass(), String.class, WifiP2pManager.ActionListener.class);
-            m.invoke(manager, channel, "CONTROLLER", new WifiP2pManager.ActionListener() {
+            m.invoke(manager, channel, deviceName, new WifiP2pManager.ActionListener() {
 
                 @Override
                 public void onSuccess() {
-                    Log.d("ControllerFragment", "Device name changed to CONTROLLER");
+                    Log.d("ControllerFragment", "Device name changed to " + deviceName);
                 }
 
                 @Override
@@ -167,6 +166,12 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
         } catch (IllegalAccessException | InvocationTargetException e) {
             Log.d("ControllerFragment", "Can't change device name");
         }
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setDeviceName();
         createGroup();
     }
 
@@ -175,7 +180,6 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
             @Override
             public void onGroupInfoAvailable(WifiP2pGroup wifiP2pGroup) {
                 if (wifiP2pGroup != null) {
-                    groupCreated = true;
                     unlockInterface();
                     String netName = wifiP2pGroup.getNetworkName();
                     String password = wifiP2pGroup.getPassphrase();
@@ -229,36 +233,6 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
     @Override
     protected void reactOnPeers() {
         updateList();
-    }
-
-    private void connect(WifiP2pManager manager, WifiP2pManager.Channel channel, WifiP2pConfig config) throws SecurityException {
-        final String address = config.deviceAddress;
-        manager.connect(channel, config, new WifiP2pManager.ActionListener() {
-
-            @Override
-            public void onSuccess() {
-                Log.d("ControllerFragment", "Connected to " + address);
-                updateList();
-            }
-
-            @Override
-            public void onFailure(int reason) {
-                Log.d("ControllerFragment", "Failed to connect to " + address);
-                updateList();
-            }
-        });
-    }
-
-    public void connectToPeer(final String address) {
-        if (groupCreated) {
-            try {
-                final WifiP2pConfig config = new WifiP2pConfig();
-                config.deviceAddress = address;
-                connect(manager, channel, config);
-            } catch (SecurityException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     private void updateList() {

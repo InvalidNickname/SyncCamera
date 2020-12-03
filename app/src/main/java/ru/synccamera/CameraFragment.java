@@ -7,6 +7,7 @@ import android.media.MediaRecorder;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Message;
@@ -28,6 +29,8 @@ import androidx.appcompat.widget.Toolbar;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 @SuppressWarnings("deprecation")
 public class CameraFragment extends P2PFragment {
@@ -69,6 +72,36 @@ public class CameraFragment extends P2PFragment {
         File mediaFile;
         mediaFile = new File(mediaStorageDir.getPath() + File.separator + timeStamp + ".mp4");
         return mediaFile;
+    }
+
+    protected void setDeviceName() {
+        deviceName = Build.MODEL;
+        try {
+            deviceName = deviceName.replace("-CONTROLLER", "");
+            Method m = manager.getClass().getMethod("setDeviceName", channel.getClass(), String.class, WifiP2pManager.ActionListener.class);
+            m.invoke(manager, channel, deviceName, new WifiP2pManager.ActionListener() {
+
+                @Override
+                public void onSuccess() {
+                    Log.d("ControllerFragment", "Device name changed to " + deviceName);
+                }
+
+                @Override
+                public void onFailure(int reason) {
+                    Log.d("ControllerFragment", "Can't change device name");
+                }
+            });
+        } catch (NoSuchMethodException e) {
+            Log.d("ControllerFragment", "Can't change device name - NoSuchMethod");
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            Log.d("ControllerFragment", "Can't change device name");
+        }
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setDeviceName();
     }
 
     @Nullable
@@ -148,7 +181,7 @@ public class CameraFragment extends P2PFragment {
                 }
                 break;
             case R.id.connect:
-                for (WifiP2pDevice device: peers) {
+                for (WifiP2pDevice device : peers) {
                     if (device.deviceName.contains("CONTROLLER")) {
                         connectToPeer(device.deviceAddress);
                         break;
@@ -325,4 +358,14 @@ public class CameraFragment extends P2PFragment {
         }
     }
 
+    @Override
+    protected void reactOnPeers() {
+        for (WifiP2pDevice device : peers) {
+            if (device.deviceName.contains("CONTROLLER")) {
+                menu.findItem(R.id.connect).setVisible(true);
+                return;
+            }
+        }
+        menu.findItem(R.id.connect).setVisible(false);
+    }
 }
