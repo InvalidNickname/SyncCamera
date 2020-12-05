@@ -14,12 +14,10 @@ import java.util.List;
 
 public class ListRVAdapter extends RecyclerView.Adapter<ListRVAdapter.CardViewHolder> {
 
-    private final ControllerFragment fragment;
     private List<PeerListItem> peers;
 
-    public ListRVAdapter(List<PeerListItem> peers, ControllerFragment fragment) {
+    public ListRVAdapter(List<PeerListItem> peers) {
         this.peers = peers;
-        this.fragment = fragment;
     }
 
     @NonNull

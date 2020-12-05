@@ -54,33 +54,30 @@ public class SelectorFragment extends Fragment implements View.OnClickListener {
 
     @Override
     public void onClick(View view) {
-        switch (view.getId()) {
-            case R.id.set_controller:
-                getActivity().getSupportFragmentManager().beginTransaction()
-                        .setReorderingAllowed(true)
-                        .replace(R.id.fragment_main, ControllerFragment.class, null)
-                        .addToBackStack(null)
-                        .commit();
-                break;
-            case R.id.set_camera:
-                getActivity().getSupportFragmentManager().beginTransaction()
-                        .setReorderingAllowed(true)
-                        .replace(R.id.fragment_main, CameraFragment.class, null)
-                        .addToBackStack(null)
-                        .commit();
-                break;
-            case R.id.sign_in:
-                GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(getActivity().getApplicationContext());
-                if (account == null) {
-                    // нет уже готового пользователя, входим
-                    Intent signInIntent = googleSignInClient.getSignInIntent();
-                    startActivityForResult(signInIntent, 1);
-                } else {
-                    // пользователь уже вошёл
-                    Toast.makeText(getContext(), getString(R.string.already_signed_in), Toast.LENGTH_LONG).show();
-                    checkForGooglePermissions();
-                }
-                break;
+        int id = view.getId();
+        if (id == R.id.set_controller) {
+            getActivity().getSupportFragmentManager().beginTransaction()
+                    .setReorderingAllowed(true)
+                    .replace(R.id.fragment_main, ControllerFragment.class, null)
+                    .addToBackStack(null)
+                    .commit();
+        } else if (id == R.id.set_camera) {
+            getActivity().getSupportFragmentManager().beginTransaction()
+                    .setReorderingAllowed(true)
+                    .replace(R.id.fragment_main, CameraFragment.class, null)
+                    .addToBackStack(null)
+                    .commit();
+        } else if (id == R.id.sign_in) {
+            GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(getActivity().getApplicationContext());
+            if (account == null) {
+                // нет уже готового пользователя, входим
+                Intent signInIntent = googleSignInClient.getSignInIntent();
+                startActivityForResult(signInIntent, 1);
+            } else {
+                // пользователь уже вошёл
+                Toast.makeText(getContext(), getString(R.string.already_signed_in), Toast.LENGTH_LONG).show();
+                checkForGooglePermissions();
+            }
         }
     }
 

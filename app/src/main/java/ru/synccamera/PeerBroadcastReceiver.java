@@ -4,7 +4,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.net.NetworkInfo;
-import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.util.Log;
 
@@ -16,7 +15,7 @@ public class PeerBroadcastReceiver extends BroadcastReceiver {
     private final WifiP2pManager.PeerListListener listener;
     private final WifiP2pManager.Channel channel;
     private final WifiP2pManager.ConnectionInfoListener connectionInfoListener;
-    private AppCompatActivity activity;
+    private final AppCompatActivity activity;
 
     public PeerBroadcastReceiver(AppCompatActivity activity, WifiP2pManager.PeerListListener listener, WifiP2pManager manager, WifiP2pManager.Channel channel, WifiP2pManager.ConnectionInfoListener connectionInfoListener) {
         this.activity = activity;

@@ -1,7 +1,6 @@
 package ru.synccamera;
 
 import android.net.wifi.p2p.WifiP2pDevice;
-import android.net.wifi.p2p.WifiP2pGroup;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -69,7 +68,7 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
         // список устройств
         RecyclerView list = rootView.findViewById(R.id.peer_list);
         list.setLayoutManager(new LinearLayoutManager(getContext()));
-        adapter = new ListRVAdapter(new ArrayList<PeerListItem>(), this);
+        adapter = new ListRVAdapter(new ArrayList<>());
         list.setAdapter(adapter);
 
         return rootView;
@@ -83,63 +82,65 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
 
     @Override
     public boolean onOptionsItemSelected(@NonNull final MenuItem item) {
-        switch (item.getItemId()) {
-            // кнопка смены режима поиска
-            case R.id.toggle_discovery:
-                if (isDiscovering) {
-                    // остановка поиска, меняем иконку кнопки поиска
-                    stopDiscovery(new WifiP2pManager.ActionListener() {
+        int itemId = item.getItemId();// кнопка смены режима поиска
+        if (itemId == R.id.toggle_discovery) {
+            Log.d("ControllerFragment", "Now discovering: " + isDiscovering);
+            if (isDiscovering) {
+                isDiscovering = false;
+                // остановка поиска, меняем иконку кнопки поиска
+                stopDiscovery(new WifiP2pManager.ActionListener() {
 
-                        @Override
-                        public void onSuccess() {
-                            Log.d("ControllerFragment", "Stopped discovery");
-                            isDiscovering = false;
-                            item.setIcon(R.drawable.ic_refresh);
-                        }
+                    @Override
+                    public void onSuccess() {
+                        Log.d("ControllerFragment", "Stopped discovery");
+                        isDiscovering = false;
+                        item.setIcon(R.drawable.ic_refresh);
+                    }
 
-                        @Override
-                        public void onFailure(int reasonCode) {
-                            Log.d("ControllerFragment", "Failed to stop discovery");
-                        }
-                    });
-                } else {
-                    // начало поиска, меняем иконку кнопки поиска
-                    startDiscovery(new WifiP2pManager.ActionListener() {
+                    @Override
+                    public void onFailure(int reasonCode) {
+                        Log.d("ControllerFragment", "Failed to stop discovery");
+                    }
+                });
+            } else {
+                // начало поиска, меняем иконку кнопки поиска
+                startDiscovery(new WifiP2pManager.ActionListener() {
 
-                        @Override
-                        public void onSuccess() {
-                            Log.d("ControllerFragment", "Started discovery");
-                            updateList();
+                    @Override
+                    public void onSuccess() {
+                        Log.d("ControllerFragment", "Started discovery");
+                        updateList();
+                        if (!shutdown) {
                             isDiscovering = true;
-                            item.setIcon(R.drawable.ic_stop);
                         }
+                        item.setIcon(R.drawable.ic_stop);
+                    }
 
-                        @Override
-                        public void onFailure(int reasonCode) {
-                            Log.d("ControllerFragment", "Failed to start discovery");
-                        }
-                    });
-                }
-                break;
-            case R.id.sync:
-                if (!isDiscovering) {
-                    // создаем новый список из всех подключенных устройств
-                    List<PeerListItem> items = new ArrayList<>();
-                    for (WifiP2pDevice device : peers) {
-                        if (device.status == 0) {
-                            items.add(new PeerListItem(device.deviceName, device.status, device.deviceAddress));
-                        }
+                    @Override
+                    public void onFailure(int reasonCode) {
+                        Log.d("ControllerFragment", "Failed to start discovery");
                     }
-                    updateList(items);
-                    Log.d("ControllerFragment", "Starting synchronization");
-                    if (server != null) {
-                        String message = "SYNC|0|" + System.currentTimeMillis();
-                        server.write(message);
+                });
+            }
+        } else if (itemId == R.id.sync) {
+            if (!isDiscovering) {
+                // создаем новый список из всех подключенных устройств
+                List<PeerListItem> items = new ArrayList<>();
+                for (WifiP2pDevice device : peers) {
+                    if (device.status == 0) {
+                        items.add(new PeerListItem(device.deviceName, device.status, device.deviceAddress));
                     }
-                } else {
-                    Log.d("ControllerFragment", "Refused to sync while discovering");
-                    Toast.makeText(getContext(), getString(R.string.stop_discovery_before_sync), Toast.LENGTH_LONG).show();
                 }
+                updateList(items);
+                Log.d("ControllerFragment", "Starting synchronization");
+                if (server != null) {
+                    String message = "SYNC|0|" + System.currentTimeMillis();
+                    server.write(message);
+                }
+            } else {
+                Log.d("ControllerFragment", "Refused to sync while discovering");
+                Toast.makeText(getContext(), getString(R.string.stop_discovery_before_sync), Toast.LENGTH_LONG).show();
+            }
         }
         return true;
     }
@@ -279,58 +280,57 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
 
     @Override
     public void onClick(View view) {
-        switch (view.getId()) {
-            case R.id.send_command:
-                if (server != null) {
-                    if (isDiscovering) {
-                        Log.d("ControllerFragment", "Refused to send command while discovering");
-                        Toast.makeText(getContext(), R.string.refused_to_send_command_while_discovering, Toast.LENGTH_LONG).show();
-                    } else if (server.getNumberOfConnections() == 0) {
-                        Log.d("ControllerFragment", "Refused to send command without active connections");
-                        Toast.makeText(getContext(), R.string.refused_to_send_command_no_active_devices, Toast.LENGTH_LONG).show();
-                    } else {
-                        long executeTime = System.currentTimeMillis() + 500;
-                        if (isRecording) {
-                            // посылаем команду на остановку записи
-                            String message = "STOP|" + executeTime;
-                            server.write(message);
-                            isRecording = false;
-                            recordButton.setText(R.string.start_recording);
-                        } else {
-                            // посылаем команду на начало записи
-                            String message = "STRT|" + executeTime;
-                            server.write(message);
-                            isRecording = true;
-                            wasRecording = true;
-                            currentActive = new ArrayList<>();
-                            for (WifiP2pDevice device : peers) {
-                                if (device.status == 0) {
-                                    currentActive.add(new PeerListItem(device.deviceName, device.status, device.deviceAddress));
-                                }
-                            }
-                            recordButton.setText(R.string.stop_recording);
-                        }
-                    }
+        int viewId = view.getId();
+        if (viewId == R.id.send_command) {
+            if (server != null) {
+                if (isDiscovering) {
+                    Log.d("ControllerFragment", "Refused to send command while discovering");
+                    Toast.makeText(getContext(), R.string.refused_to_send_command_while_discovering, Toast.LENGTH_LONG).show();
+                } else if (server.getNumberOfConnections() == 0) {
+                    Log.d("ControllerFragment", "Refused to send command without active connections");
+                    Toast.makeText(getContext(), R.string.refused_to_send_command_no_active_devices, Toast.LENGTH_LONG).show();
                 } else {
-                    Log.d("ControllerFragment", "Server not started");
-                    Toast.makeText(getContext(), R.string.server_not_started, Toast.LENGTH_LONG).show();
-                }
-                break;
-            case R.id.upload:
-                if (isRecording) {
-                    Log.d("ControllerFragment", "Refused to send upload command while recording");
-                    Toast.makeText(getContext(), R.string.refused_to_send_upload_command_while_recording, Toast.LENGTH_LONG).show();
-                } else if (!wasRecording) {
-                    Log.d("ControllerFragment", "Refused to send upload command - no videos");
-                    Toast.makeText(getContext(), R.string.refused_to_send_upload_command_no_videos, Toast.LENGTH_LONG).show();
-                } else {
-                    // посылаем команду на отправку записи
-                    String folderName = String.valueOf(System.currentTimeMillis());
-                    uploader.createFolder(folderName, id -> {
-                        String message = "UPLD|" + id;
+                    long executeTime = System.currentTimeMillis() + 500;
+                    if (isRecording) {
+                        // посылаем команду на остановку записи
+                        String message = "STOP|" + executeTime;
                         server.write(message);
-                    });
+                        isRecording = false;
+                        recordButton.setText(R.string.start_recording);
+                    } else {
+                        // посылаем команду на начало записи
+                        String message = "STRT|" + executeTime;
+                        server.write(message);
+                        isRecording = true;
+                        wasRecording = true;
+                        currentActive = new ArrayList<>();
+                        for (WifiP2pDevice device : peers) {
+                            if (device.status == 0) {
+                                currentActive.add(new PeerListItem(device.deviceName, device.status, device.deviceAddress));
+                            }
+                        }
+                        recordButton.setText(R.string.stop_recording);
+                    }
                 }
+            } else {
+                Log.d("ControllerFragment", "Server not started");
+                Toast.makeText(getContext(), R.string.server_not_started, Toast.LENGTH_LONG).show();
+            }
+        } else if (viewId == R.id.upload) {
+            if (isRecording) {
+                Log.d("ControllerFragment", "Refused to send upload command while recording");
+                Toast.makeText(getContext(), R.string.refused_to_send_upload_command_while_recording, Toast.LENGTH_LONG).show();
+            } else if (!wasRecording) {
+                Log.d("ControllerFragment", "Refused to send upload command - no videos");
+                Toast.makeText(getContext(), R.string.refused_to_send_upload_command_no_videos, Toast.LENGTH_LONG).show();
+            } else {
+                // посылаем команду на отправку записи
+                String folderName = String.valueOf(System.currentTimeMillis());
+                uploader.createFolder(folderName, id -> {
+                    String message = "UPLD|" + id;
+                    server.write(message);
+                });
+            }
         }
     }
 }

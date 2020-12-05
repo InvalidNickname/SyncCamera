@@ -67,7 +67,7 @@ public class GDriveUploader {
         private final File meta;
         private String id;
         private FileContent content;
-        private OnUploadCompleted callback;
+        private final OnUploadCompleted callback;
 
         public Loader(File meta, OnUploadCompleted callback) {
             this.meta = meta;

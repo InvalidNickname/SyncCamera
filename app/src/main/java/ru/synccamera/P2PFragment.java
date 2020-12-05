@@ -29,7 +29,7 @@ import static android.os.Looper.getMainLooper;
 public class P2PFragment extends Fragment {
 
     protected final IntentFilter intentFilter = new IntentFilter();
-    protected List<WifiP2pDevice> peers = new ArrayList<>();
+    protected final List<WifiP2pDevice> peers = new ArrayList<>();
     private final WifiP2pManager.PeerListListener peerListListener = peerList -> {
         Collection<WifiP2pDevice> refreshedPeers = peerList.getDeviceList();
         if (!refreshedPeers.equals(peers)) {
@@ -59,7 +59,7 @@ public class P2PFragment extends Fragment {
     protected String mac;
     protected String deviceName;
     protected GDriveUploader uploader;
-    private boolean shutdown = false;
+    protected boolean shutdown = false;
     private WifiManager.WifiLock wifiLock;
     private boolean firstCall = true;
     private final WifiP2pManager.ConnectionInfoListener connectionInfoListener = new WifiP2pManager.ConnectionInfoListener() {

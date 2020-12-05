@@ -14,10 +14,6 @@
     <string name="stop_recording">Stop recording</string>
     <string name="refused_to_send_command_while_discovering">Stop discovery before sending commands</string>
     <string name="refused_to_send_command_no_active_devices">No connected devices</string>
-    <string name="pref_version">Version %s</string>
-    <string name="open_settings">Settings</string>
-    <string name="send_from">E-mail (Google account)</string>
-    <string name="from_password">Password (Google account)</string>
     <string name="send_command_upload">Upload on GDrive</string>
     <string name="refused_to_send_upload_command_while_recording">Stop recording before uploading</string>
     <string name="refused_to_send_upload_command_no_videos">No video recorded</string>
@@ -28,4 +24,6 @@
     <string name="stop_discovery_before_sync">Stop discovery before synchronization</string>
     <string name="connect_to_controller">Connect to controller</string>
     <string name="camera_synchronized">Synchronized</string>
+    <string name="failed_to_create_dir">Can\'t create file dir</string>
+    <string name="recording">Recording</string>
 </resources>

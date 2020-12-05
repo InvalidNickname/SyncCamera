@@ -11,8 +11,8 @@ import androidx.annotation.NonNull;
 import java.io.IOException;
 
 public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
-    private SurfaceHolder surfaceHolder;
-    private Camera camera;
+    private final SurfaceHolder surfaceHolder;
+    private final Camera camera;
 
     public CameraPreview(Context context, Camera camera, SurfaceHolder.Callback callback) {
         super(context);

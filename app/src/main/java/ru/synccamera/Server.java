@@ -12,7 +12,7 @@ import java.util.List;
 public class Server {
 
     private final Handler handler;
-    private List<SenderReceiver> senderReceiver = new ArrayList<>();
+    private final List<SenderReceiver> senderReceiver = new ArrayList<>();
     private ServerSocket serverSocket;
 
     public Server(int port, Handler handler) {

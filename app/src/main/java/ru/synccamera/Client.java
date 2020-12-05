@@ -33,7 +33,7 @@ public class Client extends Thread {
     @Override
     public void run() {
         try {
-            socket.connect(new InetSocketAddress(hostAddress, port), 2000);
+            socket.connect(new InetSocketAddress(hostAddress, port), 5000);
             Log.d("SyncCamera", "Client connected to " + hostAddress + ":" + port);
             senderReceiver = new SenderReceiver(socket);
             senderReceiver.setCallback(handler);

@@ -1,5 +1,6 @@
 package ru.synccamera;
 
+import android.Manifest;
 import android.content.Context;
 import android.hardware.Camera;
 import android.media.CamcorderProfile;
@@ -62,8 +63,9 @@ public class CameraFragment extends P2PFragment {
         return c;
     }
 
-    private static File getOutputMediaFile() {
-        File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), "SyncCamera");
+    private File getOutputMediaFile() {
+        File mediaStorageDir = new File(getContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES), "SyncCamera");
+        Log.d("CameraFragment", mediaStorageDir.toString());
         if (!mediaStorageDir.exists()) {
             if (!mediaStorageDir.mkdirs()) {
                 Log.d("CameraFragment", "Failed to create save directory");
@@ -149,48 +151,46 @@ public class CameraFragment extends P2PFragment {
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.toggle_discovery:
-                if (isDiscovering) {
-                    item.setIcon(R.drawable.ic_refresh);
-                    stopDiscovery(new WifiP2pManager.ActionListener() {
+        int id = item.getItemId();
+        if (id == R.id.toggle_discovery) {
+            if (isDiscovering) {
+                item.setIcon(R.drawable.ic_refresh);
+                stopDiscovery(new WifiP2pManager.ActionListener() {
 
-                        @Override
-                        public void onSuccess() {
-                            Log.d("CameraFragment", "Stopped discovery");
-                            isDiscovering = false;
-                        }
-
-                        @Override
-                        public void onFailure(int reasonCode) {
-                            Log.d("CameraFragment", "Failed to stop discovery");
-                        }
-                    });
-                } else {
-                    item.setIcon(R.drawable.ic_stop);
-                    startDiscovery(new WifiP2pManager.ActionListener() {
-
-                        @Override
-                        public void onSuccess() {
-                            Log.d("CameraFragment", "Started discovery");
-                            isDiscovering = true;
-                        }
-
-                        @Override
-                        public void onFailure(int reasonCode) {
-                            Log.d("CameraFragment", "Failed to start discovery");
-                        }
-                    });
-                }
-                break;
-            case R.id.connect:
-                for (WifiP2pDevice device : peers) {
-                    if (device.deviceName.contains("CONTROLLER")) {
-                        connectToPeer(device.deviceAddress);
-                        break;
+                    @Override
+                    public void onSuccess() {
+                        Log.d("CameraFragment", "Stopped discovery");
+                        isDiscovering = false;
                     }
+
+                    @Override
+                    public void onFailure(int reasonCode) {
+                        Log.d("CameraFragment", "Failed to stop discovery");
+                    }
+                });
+            } else {
+                item.setIcon(R.drawable.ic_stop);
+                startDiscovery(new WifiP2pManager.ActionListener() {
+
+                    @Override
+                    public void onSuccess() {
+                        Log.d("CameraFragment", "Started discovery");
+                        isDiscovering = true;
+                    }
+
+                    @Override
+                    public void onFailure(int reasonCode) {
+                        Log.d("CameraFragment", "Failed to start discovery");
+                    }
+                });
+            }
+        } else if (id == R.id.connect) {
+            for (WifiP2pDevice device : peers) {
+                if (device.deviceName.contains("CONTROLLER")) {
+                    connectToPeer(device.deviceAddress);
+                    break;
                 }
-                break;
+            }
         }
         return true;
     }
@@ -319,6 +319,7 @@ public class CameraFragment extends P2PFragment {
         mediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
         mediaRecorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH));
         prevSavePath = nextSavePath;
+        getActivity().checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE);
         nextSavePath = getOutputMediaFile();
         if (nextSavePath == null) {
             releaseMediaRecorder();
