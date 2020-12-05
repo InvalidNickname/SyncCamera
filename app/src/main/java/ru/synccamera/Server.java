@@ -92,7 +92,7 @@ public class Server {
         public void run() {
             try {
                 serverSocket = new ServerSocket(port);
-                serverSocket.setSoTimeout(500);
+                serverSocket.setSoTimeout(1000);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -124,6 +124,7 @@ public class Server {
                 Log.d("SyncCamera", "Server socket opened");
             } catch (IOException e) {
                 socket = null;
+                e.printStackTrace();
                 Log.d("SyncCamera", "Failed to open server socket");
             }
         }

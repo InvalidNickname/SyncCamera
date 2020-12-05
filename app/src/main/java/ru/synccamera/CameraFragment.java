@@ -21,6 +21,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -42,8 +43,9 @@ public class CameraFragment extends P2PFragment {
     private ImageView recordingMark;
     private File nextSavePath, prevSavePath;
     private boolean videoRecorded = false;
-    private long firstSync, timeDiff;
+    private long firstSync, timeDiff = 0;
     private Menu menu;
+    private TextView cameraSynchronizedText;
 
     public CameraFragment() {
 
@@ -110,6 +112,7 @@ public class CameraFragment extends P2PFragment {
         View rootView = inflater.inflate(R.layout.fragment_camera, container, false);
 
         recordingMark = rootView.findViewById(R.id.recording_mark);
+        cameraSynchronizedText = rootView.findViewById(R.id.camera_synchronized);
 
         Toolbar toolbar = getActivity().findViewById(R.id.toolbar);
         ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
@@ -270,6 +273,7 @@ public class CameraFragment extends P2PFragment {
                         timeDiff = (System.currentTimeMillis() - ping) - firstSync;
                         Log.d("CameraFragment", "Ping: " + ping);
                         Log.d("CameraFragment", "Time difference: " + timeDiff);
+                        cameraSynchronizedText.setVisibility(View.VISIBLE);
                     }
                     break;
             }

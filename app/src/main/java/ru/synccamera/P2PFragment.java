@@ -4,8 +4,6 @@ import android.content.Context;
 import android.content.IntentFilter;
 import android.net.wifi.WifiManager;
 import android.net.wifi.p2p.WifiP2pDevice;
-import android.net.wifi.p2p.WifiP2pDeviceList;
-import android.net.wifi.p2p.WifiP2pGroup;
 import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
@@ -18,6 +16,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
+import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.util.ArrayList;
@@ -31,26 +30,23 @@ public class P2PFragment extends Fragment {
 
     protected final IntentFilter intentFilter = new IntentFilter();
     protected List<WifiP2pDevice> peers = new ArrayList<>();
-    private final WifiP2pManager.PeerListListener peerListListener = new WifiP2pManager.PeerListListener() {
-        @Override
-        public void onPeersAvailable(WifiP2pDeviceList peerList) {
-            Collection<WifiP2pDevice> refreshedPeers = peerList.getDeviceList();
-            if (!refreshedPeers.equals(peers)) {
-                Log.d("SyncCamera", "New peer list available:");
-                for (WifiP2pDevice peer : refreshedPeers) {
-                    if (!peers.contains(peer)) {
-                        Log.d("SyncCamera", "\t+ " + peer.deviceName + " | " + peer.deviceAddress);
-                    }
+    private final WifiP2pManager.PeerListListener peerListListener = peerList -> {
+        Collection<WifiP2pDevice> refreshedPeers = peerList.getDeviceList();
+        if (!refreshedPeers.equals(peers)) {
+            Log.d("SyncCamera", "New peer list available:");
+            for (WifiP2pDevice peer : refreshedPeers) {
+                if (!peers.contains(peer)) {
+                    Log.d("SyncCamera", "\t+ " + peer.deviceName + " | " + peer.deviceAddress);
                 }
-                for (WifiP2pDevice peer : peers) {
-                    if (!refreshedPeers.contains(peer)) {
-                        Log.d("SyncCamera", "\t- " + peer.deviceName + " | " + peer.deviceAddress);
-                    }
-                }
-                peers.clear();
-                peers.addAll(refreshedPeers);
-                reactOnPeers();
             }
+            for (WifiP2pDevice peer : peers) {
+                if (!refreshedPeers.contains(peer)) {
+                    Log.d("SyncCamera", "\t- " + peer.deviceName + " | " + peer.deviceAddress);
+                }
+            }
+            peers.clear();
+            peers.addAll(refreshedPeers);
+            reactOnPeers();
         }
     };
     protected WifiP2pManager.Channel channel;
@@ -63,6 +59,7 @@ public class P2PFragment extends Fragment {
     protected String mac;
     protected String deviceName;
     protected GDriveUploader uploader;
+    private boolean shutdown = false;
     private WifiManager.WifiLock wifiLock;
     private boolean firstCall = true;
     private final WifiP2pManager.ConnectionInfoListener connectionInfoListener = new WifiP2pManager.ConnectionInfoListener() {
@@ -76,12 +73,9 @@ public class P2PFragment extends Fragment {
                     firstCall = false;
                 } else {
                     if (server == null) {
-                        server = new Server(port, new Handler(new Handler.Callback() {
-                            @Override
-                            public boolean handleMessage(@NonNull Message message) {
-                                reactOnMessage(message);
-                                return true;
-                            }
+                        server = new Server(port, new Handler(message -> {
+                            reactOnMessage(message);
+                            return true;
                         }));
                     }
                     server.newConnection();
@@ -89,12 +83,9 @@ public class P2PFragment extends Fragment {
             } else {
                 if (groupOwnerAddress != null) {
                     Log.i("P2PFragment", "Connected to " + groupOwnerAddress + " as a client");
-                    client = new Client(port, groupOwnerAddress, new Handler(new Handler.Callback() {
-                        @Override
-                        public boolean handleMessage(@NonNull Message message) {
-                            reactOnMessage(message);
-                            return true;
-                        }
+                    client = new Client(port, groupOwnerAddress, new Handler(message -> {
+                        reactOnMessage(message);
+                        return true;
                     }));
                     client.start();
                 }
@@ -148,15 +139,26 @@ public class P2PFragment extends Fragment {
 
     }
 
+    private void discover(WifiP2pManager.ActionListener listener) throws SecurityException {
+        if (!shutdown) {
+            new android.os.Handler().postDelayed(() -> {
+                manager.discoverPeers(channel, listener);
+                discover(listener);
+            }, 5000);
+        }
+    }
+
     protected void startDiscovery(WifiP2pManager.ActionListener listener) {
         try {
             manager.discoverPeers(channel, listener);
+            discover(listener);
         } catch (SecurityException e) {
             e.printStackTrace();
         }
     }
 
     protected void stopDiscovery(WifiP2pManager.ActionListener listener) {
+        shutdown = true;
         try {
             manager.stopPeerDiscovery(channel, listener);
         } catch (SecurityException e) {
@@ -193,36 +195,51 @@ public class P2PFragment extends Fragment {
     @Override
     public void onDetach() {
         super.onDetach();
+        shutdown = true;
         cancelConnections();
         if (wifiLock.isHeld()) {
             wifiLock.release();
         }
     }
 
+    private void deletePersistentGroups() {
+        try {
+            Method[] methods = WifiP2pManager.class.getMethods();
+            for (Method method : methods) {
+                if (method.getName().equals("deletePersistentGroup")) {
+                    for (int netid = 0; netid < 32; netid++) {
+                        method.invoke(manager, channel, netid, null);
+                    }
+                }
+            }
+            Log.d("P2PFragment", "Deleted persistent groups");
+        } catch (Exception e) {
+            Log.d("P2PFragment", "Failed to delete persistent groups");
+        }
+    }
+
     protected void cancelConnections() {
         try {
-            manager.requestGroupInfo(channel, new WifiP2pManager.GroupInfoListener() {
-                @Override
-                public void onGroupInfoAvailable(WifiP2pGroup group) {
-                    if (group != null && manager != null && channel != null) {
-                        manager.removeGroup(channel, new WifiP2pManager.ActionListener() {
+            manager.requestGroupInfo(channel, group -> {
+                if (group != null && manager != null && channel != null) {
+                    manager.removeGroup(channel, new WifiP2pManager.ActionListener() {
 
-                            @Override
-                            public void onSuccess() {
-                                Log.d("P2PFragment", "Cancelling connections");
-                            }
+                        @Override
+                        public void onSuccess() {
+                            Log.d("P2PFragment", "Cancelling connections");
+                        }
 
-                            @Override
-                            public void onFailure(int reason) {
-                                Log.d("P2PFragment", "Failed to cancel connections");
-                            }
-                        });
-                    }
+                        @Override
+                        public void onFailure(int reason) {
+                            Log.d("P2PFragment", "Failed to cancel connections");
+                        }
+                    });
                 }
             });
         } catch (SecurityException e) {
             Log.d("P2PFragment", "Failed to cancel connections");
         }
+        deletePersistentGroups();
     }
 
     @Override

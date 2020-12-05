@@ -176,18 +176,15 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
     }
 
     private void requestGroupInfo() throws SecurityException {
-        manager.requestGroupInfo(channel, new WifiP2pManager.GroupInfoListener() {
-            @Override
-            public void onGroupInfoAvailable(WifiP2pGroup wifiP2pGroup) {
-                if (wifiP2pGroup != null) {
-                    unlockInterface();
-                    String netName = wifiP2pGroup.getNetworkName();
-                    String password = wifiP2pGroup.getPassphrase();
-                    Log.d("ControllerFragment", "Network: " + netName);
-                    Log.d("ControllerFragment", "Password: " + password);
-                } else {
-                    requestGroupInfo();
-                }
+        manager.requestGroupInfo(channel, wifiP2pGroup -> {
+            if (wifiP2pGroup != null) {
+                unlockInterface();
+                String netName = wifiP2pGroup.getNetworkName();
+                String password = wifiP2pGroup.getPassphrase();
+                Log.d("ControllerFragment", "Network: " + netName);
+                Log.d("ControllerFragment", "Password: " + password);
+            } else {
+                requestGroupInfo();
             }
         });
     }
@@ -329,12 +326,9 @@ public class ControllerFragment extends P2PFragment implements View.OnClickListe
                 } else {
                     // посылаем команду на отправку записи
                     String folderName = String.valueOf(System.currentTimeMillis());
-                    uploader.createFolder(folderName, new GDriveUploader.OnUploadCompleted() {
-                        @Override
-                        public void onComplete(String id) {
-                            String message = "UPLD|" + id;
-                            server.write(message);
-                        }
+                    uploader.createFolder(folderName, id -> {
+                        String message = "UPLD|" + id;
+                        server.write(message);
                     });
                 }
         }

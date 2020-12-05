@@ -27,4 +27,5 @@
     <string name="start_sync">Synchronize</string>
     <string name="stop_discovery_before_sync">Stop discovery before synchronization</string>
     <string name="connect_to_controller">Connect to controller</string>
+    <string name="camera_synchronized">Synchronized</string>
 </resources>
